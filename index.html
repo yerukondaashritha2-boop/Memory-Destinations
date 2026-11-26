@@ -811,6 +811,16 @@
                         <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Local Events
                     </button>
                 </div>
+                <!-- Festival 2-3 Days Advance Pre-Alert & Auto-Plan Bar -->
+                <div class="mt-2.5 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span id="festAlertDot" class="w-2 h-2 rounded-full bg-neon-cyan animate-pulse shrink-0"></span>
+                        <p id="festNextCountdown" class="text-[10px] text-gray-300 font-semibold truncate">Pre-Alert ON · 3 days before</p>
+                    </div>
+                    <button type="button" onclick="openFestivalAlertSettings()" class="tactile-btn bg-neon-pink/15 text-neon-pink border border-neon-pink/35 hover:bg-neon-pink hover:text-white font-bold py-1.5 px-2.5 rounded-xl text-[10px] flex items-center shrink-0 transition">
+                        <i class="fa-solid fa-bell mr-1"></i> Pre-Alerts
+                    </button>
+                </div>
             </div>
 
             <!-- AI Packing Guide -->
@@ -2427,6 +2437,414 @@
         let festivalSearchQuery = '';
         let currentDisplayedFestivals = [];
 
+        // ==================== FESTIVAL PRE-ALERT & 2-3 DAYS ADVANCE AUTO-PLAN ENGINE ====================
+        const DEFAULT_FEST_ALERT_CFG = {
+            enabled: true,
+            leadDays: 3, // Notify 2, 3, or 5 days before festival
+            actionMode: 'notify_and_plan', // 'notify_only' or 'notify_and_plan'
+            trackedNames: ['Sankranti (సంక్రాంతి)', 'Hornbill Festival', 'Christmas & Feast of St. Francis'],
+            customDates: [] // User-added exact date festival reminders: { name, date, dest }
+        };
+
+        let festivalAlertConfig = (() => {
+            try {
+                const raw = safeGetStorage('md_fest_alert_cfg');
+                if (raw) return { ...DEFAULT_FEST_ALERT_CFG, ...JSON.parse(raw) };
+            } catch (e) {}
+            return { ...DEFAULT_FEST_ALERT_CFG };
+        })();
+
+        function saveFestivalAlertConfig() {
+            safeSetStorage('md_fest_alert_cfg', JSON.stringify(festivalAlertConfig));
+            updateFestivalCountdownBanner();
+        }
+
+        // Approximate annual month/day anchors for real-time countdowns across calendars
+        const KNOWN_FESTIVAL_DATES = {
+            'Sankranti (సంక్రాంతి)': [1, 14],
+            'Thai Pongal (பொங்கல்)': [1, 14],
+            'Uttarayan Kite Fest (ઉત્તરાયણ)': [1, 14],
+            'Lohri & Gurpurab (ਲੋਹੜੀ)': [1, 13],
+            'Maha Shivaratri (మహా శివరాత్రి)': [2, 15],
+            'Venice Carnival (Carnevale)': [2, 14],
+            'Rio de Janeiro Carnival': [2, 16],
+            'Jaisalmer Desert Festival (मरु महोत्सव)': [2, 20],
+            'Lathmar & Braj Holi (होली)': [3, 4],
+            'Holi Color Festival': [3, 4],
+            'St. Patrick’s Festival': [3, 17],
+            'Ugadi (ఉగాది)': [3, 19],
+            'Kannada Ugadi (ಯುಗಾದಿ)': [3, 19],
+            'Gudi Padwa (गुढी पाडवा)': [3, 19],
+            'Sri Rama Navami (శ్రీరామ నవమి)': [3, 27],
+            'Sakura Cherry Blossom (桜 / Hanami)': [4, 2],
+            'Baisakhi (ਵਿਸਾਖੀ)': [4, 14],
+            'Vishu (വിഷു)': [4, 14],
+            'Bohag Bihu (বহাগ বিহু)': [4, 14],
+            'Puthandu & Chithirai Fest (தமிழ் புத்தாண்டு)': [4, 14],
+            'Pohela Boishakh (পহেলা বৈশাখ)': [4, 15],
+            'Songkran & Yi Peng Lanterns (สงกรานต์)': [4, 13],
+            'Buddha Purnima & Saga Dawa': [5, 1],
+            'Puri Rath Yatra (ରଥଯାତ୍ରା)': [7, 16],
+            'Bonalu (బోనాలు)': [7, 19],
+            'Bastille Day & Nice Carnival': [7, 14],
+            'Onam (ഓണം)': [8, 26],
+            'Onam & Pongal Trail': [8, 26],
+            'Janmashtami (जन्माष्टमी)': [9, 4],
+            'Ganeshotsav (गणेशोत्सव)': [9, 14],
+            'Oktoberfest & Christmas Markets': [9, 19],
+            'Bathukamma & Dasara (బతుకమ్మ & దసరా)': [10, 20],
+            'Mysuru Dasara (ಮೈಸೂರು ದಸರಾ)': [10, 20],
+            'Durga Puja (দুর্গা পূজা)': [10, 18],
+            'Navratri Garba (નવરાત્રી)': [10, 11],
+            'Día de los Muertos': [11, 2],
+            'Diwali (Festival of Lights)': [11, 8],
+            'Karthika Masam & Diwali (దీపావళి)': [11, 8],
+            'Dev Deepawali (देव दीपावली)': [11, 24],
+            'Karthigai Deepam (கார்த்திகை தீபம்)': [11, 28],
+            'Hornbill Festival': [12, 1],
+            'Konark Dance Festival (କୋଣାର୍କ)': [12, 1],
+            'Fête des Lumières (Festival of Lights)': [12, 8],
+            'Poush Mela (পৌষ মেলা)': [12, 23],
+            'Christmas & Feast of St. Francis': [12, 25],
+            'Christmas & Winter Carnival': [12, 25],
+            'Dubai Shopping & New Year Fest': [12, 31]
+        };
+
+        const MONTH_MAP = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+
+        function estimateNextFestivalDate(fest) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            if (fest.exactDate) {
+                const parts = fest.exactDate.split('-').map(Number);
+                if (parts.length === 3) {
+                    const target = new Date(parts[0], parts[1] - 1, parts[2]);
+                    const daysLeft = Math.ceil((target - today) / 86400000);
+                    return { date: target, daysLeft };
+                }
+            }
+
+            let month = 12, day = 15;
+            if (KNOWN_FESTIVAL_DATES[fest.name]) {
+                [month, day] = KNOWN_FESTIVAL_DATES[fest.name];
+            } else {
+                const winLower = String(fest.window || '').toLowerCase();
+                for (const [mKey, mNum] of Object.entries(MONTH_MAP)) {
+                    if (winLower.includes(mKey)) { month = mNum; break; }
+                }
+            }
+
+            let target = new Date(today.getFullYear(), month - 1, day);
+            if (target < today) {
+                target = new Date(today.getFullYear() + 1, month - 1, day);
+            }
+            const daysLeft = Math.ceil((target - today) / 86400000);
+            return { date: target, daysLeft };
+        }
+
+        function getUpcomingFestivalsList(limit = 6) {
+            const pool = [
+                ...festivalAlertConfig.customDates.map(c => ({
+                    name: c.name,
+                    dest: c.dest || 'Best Iconic Spot',
+                    window: c.date,
+                    exactDate: c.date,
+                    langLabel: 'Custom Date',
+                    isCustom: true
+                })),
+                ...festivalCalendars.telugu,
+                ...festivalCalendars.indian,
+                ...festivalCalendars.global
+            ];
+
+            // Deduplicate by festival name
+            const seen = new Set();
+            const enriched = [];
+            pool.forEach(f => {
+                if (seen.has(f.name)) return;
+                seen.add(f.name);
+                const est = estimateNextFestivalDate(f);
+                if (est.daysLeft >= 0) {
+                    enriched.push({ ...f, nextDate: est.date, daysLeft: est.daysLeft });
+                }
+            });
+
+            enriched.sort((a, b) => a.daysLeft - b.daysLeft);
+            return enriched.slice(0, limit);
+        }
+
+        function isFestivalTracked(festName) {
+            return festivalAlertConfig.trackedNames.includes(festName);
+        }
+
+        function toggleDisplayedFestivalAlert(idx) {
+            const fest = currentDisplayedFestivals[idx];
+            if (!fest) return;
+            const i = festivalAlertConfig.trackedNames.indexOf(fest.name);
+            if (i >= 0) {
+                festivalAlertConfig.trackedNames.splice(i, 1);
+                showToast(`Removed pre-alert for ${fest.name.split('(')[0].trim()}`, 'fa-bell-slash text-gray-400');
+            } else {
+                festivalAlertConfig.trackedNames.push(fest.name);
+                festivalAlertConfig.enabled = true;
+                showToast(`Alert set (${festivalAlertConfig.leadDays}d before): ${fest.name.split('(')[0].trim()}`, 'fa-bell text-neon-pink');
+            }
+            saveFestivalAlertConfig();
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalCalendarHTML();
+        }
+
+        function updateFestivalCountdownBanner() {
+            const dot = document.getElementById('festAlertDot');
+            const label = document.getElementById('festNextCountdown');
+            if (!dot || !label) return;
+
+            if (!festivalAlertConfig.enabled) {
+                dot.className = 'w-2 h-2 rounded-full bg-gray-500 shrink-0';
+                label.innerText = 'Festival Pre-Alerts Paused';
+                return;
+            }
+
+            const upcoming = getUpcomingFestivalsList(1);
+            if (upcoming.length) {
+                const next = upcoming[0];
+                const shortName = next.name.split('(')[0].trim();
+                const isDueSoon = next.daysLeft <= festivalAlertConfig.leadDays;
+                dot.className = isDueSoon
+                    ? 'w-2 h-2 rounded-full bg-neon-pink animate-ping shrink-0'
+                    : 'w-2 h-2 rounded-full bg-neon-cyan animate-pulse shrink-0';
+                const dayTxt = next.daysLeft === 0 ? 'Today!' : next.daysLeft === 1 ? 'Tomorrow!' : `in ${next.daysLeft}d`;
+                label.innerText = `Next: ${shortName} (${dayTxt}) · ${festivalAlertConfig.leadDays}d Alert`;
+            } else {
+                label.innerText = `Pre-Alert ON · ${festivalAlertConfig.leadDays} days before`;
+            }
+        }
+
+        function triggerFestivalPreAlertNotification(fest, isSimulation = false) {
+            const modeText = festivalAlertConfig.actionMode === 'notify_and_plan'
+                ? 'Auto-Trip Planner is ready to build your festival itinerary right now!'
+                : 'Just a heads-up so you do not miss the upcoming celebration!';
+            const daysBadge = fest.daysLeft === 0 ? 'TODAY' : fest.daysLeft === 1 ? 'TOMORROW' : `IN ${fest.daysLeft} DAYS`;
+
+            // Try sending a real browser push notification if permission is granted
+            try {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(`🎉 Upcoming Festival (${daysBadge}): ${fest.name}`, {
+                        body: `Destination: ${fest.dest}. Tap the app to plan your trip!`
+                    });
+                }
+            } catch (e) {}
+
+            showModal(
+                `<span class="text-neon-amber"><i class="fa-solid fa-bell mr-2 animate-bounce"></i>Festival Coming Soon!</span>`,
+                `<div class="bg-gradient-to-br from-neon-amber/15 to-neon-pink/15 border border-neon-amber/35 rounded-2xl p-4 text-left mb-3">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="font-mono text-[9px] font-bold bg-neon-pink text-white px-2 py-0.5 rounded-full">${isSimulation ? `${festivalAlertConfig.leadDays}D PRE-ALERT PREVIEW` : daysBadge}</span>
+                        <span class="font-mono text-[9px] text-neon-cyan uppercase">${escapeHtml(fest.window || 'Upcoming')}</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-white mb-1">${escapeHtml(fest.name)}</h4>
+                    <p class="text-[11px] text-neon-cyan font-semibold mb-1.5"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(fest.dest)}</p>
+                    <p class="text-[11px] text-gray-300 leading-relaxed">${modeText}</p>
+                 </div>
+                 <p class="text-[10px] text-gray-400">Would you like AI to plan your festival trip now, or just keep the reminder?</p>`,
+                'Plan Trip Now with AI',
+                () => generateFestivalAITrip(fest.name, fest.dest),
+                'Just Notify (Later)'
+            );
+        }
+
+        function renderFestivalAlertSettingsHTML() {
+            const cfg = festivalAlertConfig;
+            const upcoming = getUpcomingFestivalsList(5);
+
+            const leadBtns = [2, 3, 5].map(d => `
+                <button type="button" onclick="setFestivalLeadDays(${d})" class="flex-1 py-2 rounded-xl text-xs font-bold transition ${cfg.leadDays === d ? 'bg-neon-cyan text-cosmic-900 shadow' : 'bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10'}">
+                    ${d} Days Before
+                </button>
+            `).join('');
+
+            const upcomingCards = upcoming.map((f, i) => {
+                const tracked = isFestivalTracked(f.name) || f.isCustom;
+                const due = f.daysLeft <= cfg.leadDays;
+                const dateStr = f.nextDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                return `
+                    <div class="bg-white/5 border ${due ? 'border-neon-pink/50' : 'border-white/10'} rounded-2xl p-3 flex items-center justify-between gap-2 text-left">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <span class="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full ${due ? 'bg-neon-pink text-white' : 'bg-neon-amber/15 text-neon-amber'}">${f.daysLeft === 0 ? 'Today' : `In ${f.daysLeft}d`} · ${dateStr}</span>
+                                ${tracked ? '<span class="text-[9px] text-neon-cyan font-bold"><i class="fa-solid fa-bell"></i></span>' : ''}
+                            </div>
+                            <p class="text-xs font-bold text-white truncate">${escapeHtml(f.name)}</p>
+                            <p class="text-[10px] text-gray-400 truncate">${escapeHtml(f.dest)}</p>
+                        </div>
+                        <button type="button" onclick="planUpcomingFromAlert(${i})" class="tactile-btn bg-neon-cyan/20 hover:bg-neon-cyan hover:text-cosmic-900 text-neon-cyan border border-neon-cyan/35 px-2.5 py-2 rounded-xl text-[10px] font-bold shrink-0">
+                            Plan
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="space-y-3 text-left">
+                    <!-- Master ON/OFF Toggle -->
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-white">Advance Festival Pre-Alerts</p>
+                            <p class="text-[10px] text-gray-400">Notify & plan 2–3 days before festivals</p>
+                        </div>
+                        <button type="button" onclick="toggleFestivalAlertsMaster()" class="px-3 py-1.5 rounded-full text-[11px] font-bold transition ${cfg.enabled ? 'bg-emerald-500 text-cosmic-900' : 'bg-white/10 text-gray-400'}">
+                            ${cfg.enabled ? 'ON' : 'OFF'}
+                        </button>
+                    </div>
+
+                    <!-- Lead Time Selector (2 / 3 / 5 Days Before) -->
+                    <div>
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-neon-cyan font-bold mb-1.5">Notify Me Before Festival</p>
+                        <div class="flex gap-1.5">${leadBtns}</div>
+                    </div>
+
+                    <!-- Mode: Notify Only vs Notify + Auto-Plan -->
+                    <div>
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-neon-pink font-bold mb-1.5">When Alert Triggers</p>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button type="button" onclick="setFestivalAlertMode('notify_and_plan')" class="py-2 px-2 rounded-xl text-[11px] font-bold transition ${cfg.actionMode === 'notify_and_plan' ? 'bg-gradient-to-r from-neon-pink to-purple-600 text-white shadow' : 'bg-white/5 text-gray-300 border border-white/10'}">
+                                <i class="fa-solid fa-route mr-1"></i> Notify + Plan Trip
+                            </button>
+                            <button type="button" onclick="setFestivalAlertMode('notify_only')" class="py-2 px-2 rounded-xl text-[11px] font-bold transition ${cfg.actionMode === 'notify_only' ? 'bg-gradient-to-r from-neon-amber to-orange-500 text-cosmic-900 shadow' : 'bg-white/5 text-gray-300 border border-white/10'}">
+                                <i class="fa-solid fa-bell mr-1"></i> Notify Only
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Exact Custom Festival Date Reminder -->
+                    <div class="bg-black/35 border border-white/10 rounded-2xl p-3 space-y-2">
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-neon-amber font-bold"><i class="fa-solid fa-calendar-plus mr-1"></i>Pin Custom Festival Date</p>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <input id="customAlertFestName" type="text" placeholder="Festival (e.g., Sankranti)" class="bg-white/5 border border-white/15 rounded-xl px-2.5 py-2 text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-neon-amber">
+                            <input id="customAlertFestDate" type="date" class="bg-white/5 border border-white/15 rounded-xl px-2 py-2 text-[11px] text-gray-200 [color-scheme:dark]">
+                        </div>
+                        <div class="flex gap-1.5">
+                            <input id="customAlertFestDest" type="text" placeholder="Destination (e.g., Konaseema)" class="flex-1 bg-white/5 border border-white/15 rounded-xl px-2.5 py-2 text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-neon-amber">
+                            <button type="button" onclick="addCustomFestivalDateAlert()" class="tactile-btn bg-neon-amber text-cosmic-900 font-bold px-3 py-2 rounded-xl text-[11px] shrink-0">Set Alert</button>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Festivals Countdown List -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <p class="font-mono text-[9px] uppercase tracking-widest text-gray-400 font-bold">Upcoming Festival Radar</p>
+                            <button type="button" onclick="requestFestivalBrowserNotify()" class="text-[10px] font-bold text-neon-cyan hover:underline"><i class="fa-solid fa-mobile-screen-button mr-1"></i>Enable Push</button>
+                        </div>
+                        <div class="space-y-2 max-h-40 overflow-y-auto hide-scroll">${upcomingCards}</div>
+                    </div>
+
+                    <!-- Live Preview / Test Button -->
+                    <button type="button" onclick="previewFestivalPreAlertNow()" class="tactile-btn w-full py-2.5 rounded-xl bg-neon-pink/15 hover:bg-neon-pink text-neon-pink hover:text-white border border-neon-pink/40 font-bold text-xs transition flex items-center justify-center">
+                        <i class="fa-solid fa-bolt mr-1.5"></i> Test ${cfg.leadDays}-Day Advance Alert Now
+                    </button>
+                </div>
+            `;
+        }
+
+        function openFestivalAlertSettings() {
+            showModal('Festival Pre-Alerts', renderFestivalAlertSettingsHTML(), 'Done');
+        }
+
+        function toggleFestivalAlertsMaster() {
+            festivalAlertConfig.enabled = !festivalAlertConfig.enabled;
+            saveFestivalAlertConfig();
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalAlertSettingsHTML();
+            showToast(festivalAlertConfig.enabled ? 'Festival Pre-Alerts Enabled!' : 'Festival Pre-Alerts Paused', 'fa-bell text-neon-pink');
+        }
+
+        function setFestivalLeadDays(days) {
+            festivalAlertConfig.leadDays = days;
+            festivalAlertConfig.enabled = true;
+            saveFestivalAlertConfig();
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalAlertSettingsHTML();
+            showToast(`Alert set to ${days} days before festival!`, 'fa-clock text-neon-cyan');
+        }
+
+        function setFestivalAlertMode(mode) {
+            festivalAlertConfig.actionMode = mode;
+            saveFestivalAlertConfig();
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalAlertSettingsHTML();
+            showToast(mode === 'notify_and_plan' ? 'Mode: Notify + Auto-Plan Trip' : 'Mode: Notify Only', 'fa-sliders text-neon-amber');
+        }
+
+        function addCustomFestivalDateAlert() {
+            const name = document.getElementById('customAlertFestName')?.value.trim();
+            const date = document.getElementById('customAlertFestDate')?.value;
+            const dest = document.getElementById('customAlertFestDest')?.value.trim() || 'Best Festival Destination';
+            if (!name || !date) {
+                showToast('Enter festival name & date!', 'fa-circle-exclamation text-neon-amber');
+                return;
+            }
+            festivalAlertConfig.customDates.unshift({ name, date, dest });
+            festivalAlertConfig.enabled = true;
+            saveFestivalAlertConfig();
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalAlertSettingsHTML();
+            showToast(`Pinned ${name} (${festivalAlertConfig.leadDays}d alert set)!`, 'fa-calendar-check text-neon-cyan');
+        }
+
+        function planUpcomingFromAlert(idx) {
+            const upcoming = getUpcomingFestivalsList(5);
+            const fest = upcoming[idx];
+            if (!fest) return;
+            closeModal();
+            generateFestivalAITrip(fest.name, fest.dest);
+        }
+
+        function previewFestivalPreAlertNow() {
+            const upcoming = getUpcomingFestivalsList(1);
+            const sample = upcoming[0] || {
+                name: 'Sankranti (సంక్రాంతి)',
+                dest: 'Konaseema & Araku Valley, AP',
+                window: 'Upcoming',
+                daysLeft: festivalAlertConfig.leadDays
+            };
+            closeModal();
+            setTimeout(() => triggerFestivalPreAlertNotification({ ...sample, daysLeft: festivalAlertConfig.leadDays }, true), 180);
+        }
+
+        async function requestFestivalBrowserNotify() {
+            if (!('Notification' in window)) {
+                showToast('In-app alerts active (browser push unsupported)', 'fa-bell text-neon-amber');
+                return;
+            }
+            try {
+                const perm = await Notification.requestPermission();
+                if (perm === 'granted') {
+                    showToast('Browser Push Alerts Enabled! 🔔', 'fa-bell text-emerald-400');
+                } else {
+                    showToast('Using in-app Festival Alerts', 'fa-bell text-neon-amber');
+                }
+            } catch (e) {
+                showToast('In-app Festival Alerts active!', 'fa-bell text-neon-cyan');
+            }
+        }
+
+        function initFestivalPreAlertEngine() {
+            updateFestivalCountdownBanner();
+            if (!festivalAlertConfig.enabled) return;
+
+            const todayKey = new Date().toISOString().slice(0, 10);
+            const upcoming = getUpcomingFestivalsList(5);
+            const dueFestival = upcoming.find(f => f.daysLeft <= festivalAlertConfig.leadDays);
+
+            if (dueFestival && safeGetStorage('md_last_fest_alert_day') !== todayKey) {
+                safeSetStorage('md_last_fest_alert_day', todayKey);
+                setTimeout(() => {
+                    showToast(`🔔 ${dueFestival.name.split('(')[0].trim()} in ${dueFestival.daysLeft}d! Tap Squad → Pre-Alerts`, 'fa-bell text-neon-amber');
+                }, 1400);
+            }
+        }
+
         function renderFestivalCalendarHTML() {
             const tabs = [
                 { key: 'telugu', label: '🪔 Local / తెలుగు' },
@@ -2482,9 +2900,14 @@
                             <span class="text-[9px] font-bold text-neon-pink bg-neon-pink/15 px-2 py-0.5 rounded-full shrink-0">${escapeHtml(f.langLabel || '')}</span>
                         </div>
                         <p class="text-[10px] text-gray-400 leading-relaxed mb-2.5">${escapeHtml(f.highlight)}</p>
-                        <button type="button" onclick="planDisplayedFestival(${idx})" class="tactile-btn w-full bg-neon-cyan/15 hover:bg-neon-cyan hover:text-cosmic-900 text-neon-cyan border border-neon-cyan/35 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center">
-                            <i class="fa-solid fa-route mr-1.5"></i> Plan Festival Trip with AI
-                        </button>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="planDisplayedFestival(${idx})" class="tactile-btn flex-1 bg-neon-cyan/15 hover:bg-neon-cyan hover:text-cosmic-900 text-neon-cyan border border-neon-cyan/35 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center">
+                                <i class="fa-solid fa-route mr-1.5"></i> Plan Trip with AI
+                            </button>
+                            <button type="button" title="Notify ${festivalAlertConfig.leadDays} days before" onclick="toggleDisplayedFestivalAlert(${idx})" class="tactile-btn px-3 py-2 rounded-xl text-[11px] font-bold border transition flex items-center justify-center shrink-0 ${isFestivalTracked(f.name) ? 'bg-neon-pink text-white border-neon-pink shadow-sm' : 'bg-white/5 text-gray-300 border-white/15 hover:border-neon-pink hover:text-neon-pink'}">
+                                <i class="fa-solid ${isFestivalTracked(f.name) ? 'fa-bell' : 'fa-bell-slash'} mr-1"></i>${festivalAlertConfig.leadDays}d
+                            </button>
+                        </div>
                     </div>
                 `).join('')
                 : `<div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
@@ -2497,6 +2920,11 @@
             return `
                 <div class="space-y-2.5">
                     <div class="flex gap-1.5 p-1 bg-black/40 rounded-2xl border border-white/10">${tabButtons}</div>
+                    <!-- Quick Pre-Alert Banner inside Calendar Modal -->
+                    <div class="flex items-center justify-between bg-neon-pink/10 border border-neon-pink/30 rounded-xl px-3 py-2">
+                        <span class="text-[10px] font-bold text-gray-200"><i class="fa-solid fa-bell text-neon-pink mr-1.5"></i>Notify ${festivalAlertConfig.leadDays}d before (${festivalAlertConfig.actionMode === 'notify_and_plan' ? 'Auto-Plan' : 'Notify'})</span>
+                        <button type="button" onclick="openFestivalAlertSettings()" class="text-[10px] font-bold text-neon-cyan underline">Settings</button>
+                    </div>
                     <!-- All Languages & Calendar Selector right beside/below Local (తెలుగు) / Indian / World -->
                     <div class="flex items-center gap-2 bg-white/5 border border-neon-amber/35 rounded-xl px-2.5 py-2">
                         <i class="fa-solid fa-language text-neon-amber text-xs shrink-0"></i>
@@ -3131,9 +3559,11 @@
                 applyCosmicThemeVisuals();
                 resizeCanvas();
                 animateBg();
+                initFestivalPreAlertEngine();
             });
             applyCosmicThemeVisuals();
             resizeCanvas();
+            initFestivalPreAlertEngine();
         })();
     </script>
 </body>
