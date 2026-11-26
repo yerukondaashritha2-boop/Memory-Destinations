@@ -1334,12 +1334,18 @@
     <script>
         /* ==================== 1. CONFIGURATION & STATE ==================== */
         const DEFAULT_CONFIG = {
-            gemini: "AQ.Ab8RN6J8aOXaCobGQ6Y_ivmgwfQIgobszJNvHacUgeQYodipmA",
+            gemini: "AQ.Ab8RN6JSY0KDJzADeyMLq5k31rzWwuSjp-EU_Z86gOcIYJpsiQ",
             imgbb: "12634aed8b4b8ebefba289b5d49f8ae7",
             travelSheet: "https://sheetdb.io/api/v1/xxmv0yrm8dra5",
             memorySheet: "https://sheetdb.io/api/v1/pg4luv13emc9s"
         };
-        let GEMINI_API_KEY = (localStorage.getItem('md_gemini_key') || DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
+        const savedGeminiKey = (localStorage.getItem('md_gemini_key') || '').replace(/[\s'"]+/g, '');
+        if (savedGeminiKey === "AQ.Ab8RN6J8aOXaCobGQ6Y_ivmgwfQIgobszJNvHacUgeQYodipmA") {
+            localStorage.removeItem('md_gemini_key');
+            localStorage.removeItem('md_gemini_model');
+            localStorage.removeItem('md_gemini_gateway');
+        }
+        let GEMINI_API_KEY = ((savedGeminiKey && savedGeminiKey !== "AQ.Ab8RN6J8aOXaCobGQ6Y_ivmgwfQIgobszJNvHacUgeQYodipmA") ? savedGeminiKey : DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
         let IMGBB_API_KEY = localStorage.getItem('md_imgbb_key') || DEFAULT_CONFIG.imgbb;
         let TRAVEL_SHEETDB_URL = localStorage.getItem('md_travel_sheet') || DEFAULT_CONFIG.travelSheet;
         let MEMORY_SHEETDB_URL = localStorage.getItem('md_memory_sheet') || DEFAULT_CONFIG.memorySheet;
