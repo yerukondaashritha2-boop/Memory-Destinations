@@ -1339,13 +1339,15 @@
             travelSheet: "https://sheetdb.io/api/v1/xxmv0yrm8dra5",
             memorySheet: "https://sheetdb.io/api/v1/pg4luv13emc9s"
         };
-        const savedGeminiKey = (localStorage.getItem('md_gemini_key') || '').replace(/[\s'"]+/g, '');
-        if (savedGeminiKey === "AQ.Ab8RN6J8aOXaCobGQ6Y_ivmgwfQIgobszJNvHacUgeQYodipmA") {
-            localStorage.removeItem('md_gemini_key');
+        // Ensure the new integrated API key is applied cleanly across Travel Studio & Memory Vault
+        const KEY_SYNC_TAG = "aq_key_direct_v2";
+        if (localStorage.getItem('md_key_sync_tag') !== KEY_SYNC_TAG) {
+            localStorage.setItem('md_gemini_key', DEFAULT_CONFIG.gemini);
             localStorage.removeItem('md_gemini_model');
             localStorage.removeItem('md_gemini_gateway');
+            localStorage.setItem('md_key_sync_tag', KEY_SYNC_TAG);
         }
-        let GEMINI_API_KEY = ((savedGeminiKey && savedGeminiKey !== "AQ.Ab8RN6J8aOXaCobGQ6Y_ivmgwfQIgobszJNvHacUgeQYodipmA") ? savedGeminiKey : DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
+        let GEMINI_API_KEY = (localStorage.getItem('md_gemini_key') || DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
         let IMGBB_API_KEY = localStorage.getItem('md_imgbb_key') || DEFAULT_CONFIG.imgbb;
         let TRAVEL_SHEETDB_URL = localStorage.getItem('md_travel_sheet') || DEFAULT_CONFIG.travelSheet;
         let MEMORY_SHEETDB_URL = localStorage.getItem('md_memory_sheet') || DEFAULT_CONFIG.memorySheet;
@@ -1353,6 +1355,8 @@
         // Active Gemini models (2026) with auto-discovery fallback
         const PREFERRED_MODELS = [
             'gemini-2.5-flash',
+            'gemini-3.8-flash',
+            'gemini-3.7-flash',
             'gemini-3-flash-preview',
             'gemini-3.1-flash-lite',
             'gemini-2.5-flash-lite',
@@ -1523,8 +1527,8 @@
             const baseUrl = gateway === 'vertex'
                 ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${modelName}:generateContent`
                 : `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-            const payload = JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] });
-
+            // Include role: 'user' so both AI Studio & Vertex AI Express (AQ. key) endpoints work directly
+            const payload = JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }] });
             // Attempt 1: Official x-goog-api-key header (required for modern AQ. keys)
             let headerResult = null;
             try {
