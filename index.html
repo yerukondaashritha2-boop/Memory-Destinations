@@ -464,10 +464,10 @@
 
     <div class="app-container">
 
-        <!-- Interactive Live Background Graphics Canvas (Topography in Travel / Starfield in Vault) -->
+        <!-- Interactive Live Background Graphics Canvas -->
         <canvas id="bgGraphicsCanvas"></canvas>
 
-        <!-- Cosmic Orbs (Visible in Memory Mode) -->
+        <!-- Cosmic Orbs -->
         <div class="ambient-glow glow-1"></div>
         <div class="ambient-glow glow-2"></div>
 
@@ -525,7 +525,6 @@
 
             <!-- Boarding-Pass Style Surprise Me Roulette Card -->
             <div class="ticket-card rounded-3xl p-5 mb-5 text-white cursor-pointer group tactile-btn" onclick="surpriseDestination()">
-                <!-- Subtle SVG Compass Watermark -->
                 <svg class="absolute -right-6 -bottom-6 w-32 h-32 text-white/15 group-hover:rotate-45 transition duration-700 pointer-events-none" viewBox="0 0 100 100" fill="none">
                     <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
                     <circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1.5"/>
@@ -1339,31 +1338,53 @@
             travelSheet: "https://sheetdb.io/api/v1/xxmv0yrm8dra5",
             memorySheet: "https://sheetdb.io/api/v1/pg4luv13emc9s"
         };
-        // Ensure the new integrated API key is applied cleanly across Travel Studio & Memory Vault
-        const KEY_SYNC_TAG = "aq_key_direct_v2";
-        if (localStorage.getItem('md_key_sync_tag') !== KEY_SYNC_TAG) {
-            localStorage.setItem('md_gemini_key', DEFAULT_CONFIG.gemini);
-            localStorage.removeItem('md_gemini_model');
-            localStorage.removeItem('md_gemini_gateway');
-            localStorage.setItem('md_key_sync_tag', KEY_SYNC_TAG);
+
+        // Direct API key sync across Travel Studio & Memory Vault (Preview & GitHub Pages safe)
+        const KEY_SYNC_TAG = "aq_key_direct_v5";
+        let GEMINI_API_KEY = DEFAULT_CONFIG.gemini;
+        let IMGBB_API_KEY = DEFAULT_CONFIG.imgbb;
+        let TRAVEL_SHEETDB_URL = DEFAULT_CONFIG.travelSheet;
+        let MEMORY_SHEETDB_URL = DEFAULT_CONFIG.memorySheet;
+        let activeGeminiModel = null;
+        let activeGeminiGateway = null;
+        let currentCosmicThemeIdx = 0;
+
+        function safeGetStorage(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
         }
-        let GEMINI_API_KEY = (localStorage.getItem('md_gemini_key') || DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
-        let IMGBB_API_KEY = localStorage.getItem('md_imgbb_key') || DEFAULT_CONFIG.imgbb;
-        let TRAVEL_SHEETDB_URL = localStorage.getItem('md_travel_sheet') || DEFAULT_CONFIG.travelSheet;
-        let MEMORY_SHEETDB_URL = localStorage.getItem('md_memory_sheet') || DEFAULT_CONFIG.memorySheet;
+        function safeSetStorage(key, val) {
+            try { localStorage.setItem(key, val); } catch (e) {}
+        }
+        function safeRemoveStorage(key) {
+            try { localStorage.removeItem(key); } catch (e) {}
+        }
+
+        // Automatically sync the new Gemini API key on load so Preview & GitHub Pages work immediately
+        if (safeGetStorage('md_key_sync_tag') !== KEY_SYNC_TAG) {
+            safeSetStorage('md_gemini_key', DEFAULT_CONFIG.gemini);
+            safeRemoveStorage('md_gemini_model');
+            safeRemoveStorage('md_gemini_gateway');
+            safeSetStorage('md_key_sync_tag', KEY_SYNC_TAG);
+        }
+        GEMINI_API_KEY = (safeGetStorage('md_gemini_key') || DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
+        IMGBB_API_KEY = safeGetStorage('md_imgbb_key') || DEFAULT_CONFIG.imgbb;
+        TRAVEL_SHEETDB_URL = safeGetStorage('md_travel_sheet') || DEFAULT_CONFIG.travelSheet;
+        MEMORY_SHEETDB_URL = safeGetStorage('md_memory_sheet') || DEFAULT_CONFIG.memorySheet;
+        activeGeminiModel = safeGetStorage('md_gemini_model') || null;
+        activeGeminiGateway = safeGetStorage('md_gemini_gateway') || null;
+        currentCosmicThemeIdx = parseInt(safeGetStorage('md_theme_idx') || '0', 10);
 
         // Active Gemini models (2026) with auto-discovery fallback
         const PREFERRED_MODELS = [
             'gemini-2.5-flash',
+            'gemini-2.5-flash-lite',
+            'gemini-3-flash-preview',
+            'gemini-3.5-flash',
             'gemini-3.8-flash',
             'gemini-3.7-flash',
-            'gemini-3-flash-preview',
             'gemini-3.1-flash-lite',
-            'gemini-2.5-flash-lite',
             'gemini-3.5-flash-lite'
         ];
-        let activeGeminiModel = localStorage.getItem('md_gemini_model') || null;
-        let activeGeminiGateway = localStorage.getItem('md_gemini_gateway') || null;
 
         // Shared App State
         let currentAppMode = 'travel';
@@ -1405,7 +1426,6 @@
             { name: 'Kyoto Neon', type: 'image', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=2000&q=80', g1: '#FF2E93', g2: '#FFD166' },
             { name: 'Sahara Starlight', type: 'image', url: 'https://images.unsplash.com/photo-1547623641-82fbb83476e9?auto=format&fit=crop&w=2000&q=80', g1: '#F97316', g2: '#FF2E93' }
         ];
-        let currentCosmicThemeIdx = parseInt(localStorage.getItem('md_theme_idx') || '0', 10);
 
         /* ==================== 2. DUAL-MODE SWITCHING & NAVIGATION ==================== */
         function switchAppMode(mode) {
@@ -1416,7 +1436,6 @@
             const navT = document.getElementById('nav-travel');
             const navM = document.getElementById('nav-memory');
 
-            // Apply the exact same unified wallpaper theme to both Travel Studio & Memory Vault
             applyCosmicThemeVisuals();
 
             if (mode === 'travel') {
@@ -1517,19 +1536,48 @@
             return div.innerHTML;
         }
 
-        /* ==================== 4. REAL-TIME GEMINI AI ENGINE ==================== */
+        /* ==================== 4. REAL-TIME GEMINI AI ENGINE (BOTH TRAVEL & MEMORY) ==================== */
         function sanitizeApiKey(rawKey) {
             return String(rawKey || '').replace(/[\s'"]+/g, '').trim();
         }
 
-        async function fetchGeminiEndpoint(modelName, promptText, gateway = 'studio') {
+        async function fetchGeminiEndpoint(modelName, promptText, gateway = 'vertex') {
             const cleanKey = sanitizeApiKey(GEMINI_API_KEY);
             const baseUrl = gateway === 'vertex'
                 ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${modelName}:generateContent`
                 : `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-            // Include role: 'user' so both AI Studio & Vertex AI Express (AQ. key) endpoints work directly
+            // Include role: 'user' so both Vertex AI Express (AQ. key) & AI Studio endpoints work cleanly in browser/GitHub Pages
             const payload = JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }] });
-            // Attempt 1: Official x-goog-api-key header (required for modern AQ. keys)
+
+            // Vertex AI Express (AQ. keys): try ?key= first for clean browser/GitHub Pages CORS compatibility
+            if (gateway === 'vertex') {
+                let queryResult = null;
+                try {
+                    const res = await fetch(`${baseUrl}?key=${encodeURIComponent(cleanKey)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: payload
+                    });
+                    queryResult = { ok: res.ok, status: res.status, data: await res.json() };
+                    if (queryResult.ok) return queryResult;
+                } catch (e) {
+                    queryResult = null;
+                }
+
+                try {
+                    const res = await fetch(baseUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanKey },
+                        body: payload
+                    });
+                    const headerResult = { ok: res.ok, status: res.status, data: await res.json() };
+                    if (headerResult.ok || !queryResult) return headerResult;
+                } catch (e) {}
+
+                return queryResult || { ok: false, status: 0, data: { error: { message: 'Network error contacting Vertex Gemini.' } } };
+            }
+
+            // Google AI Studio gateway: try x-goog-api-key header first, then ?key= fallback
             let headerResult = null;
             try {
                 const res = await fetch(baseUrl, {
@@ -1543,7 +1591,6 @@
                 headerResult = null;
             }
 
-            // Attempt 2: Query parameter fallback (?key=...) if header preflight or auth format fails
             try {
                 const res = await fetch(`${baseUrl}?key=${encodeURIComponent(cleanKey)}`, {
                     method: 'POST',
@@ -1591,10 +1638,10 @@
                 ? [activeGeminiModel, ...PREFERRED_MODELS.filter(m => m !== activeGeminiModel)]
                 : [...PREFERRED_MODELS];
 
-            // Try both Google AI Studio and Vertex AI Express gateways (AQ. keys can belong to either)
+            // Prioritize Vertex AI Express first for AQ. keys, with automatic fallback to Google AI Studio
             const gatewaysToTry = activeGeminiGateway
-                ? [activeGeminiGateway, activeGeminiGateway === 'studio' ? 'vertex' : 'studio']
-                : (GEMINI_API_KEY.startsWith('AQ.') ? ['studio', 'vertex'] : ['studio']);
+                ? [activeGeminiGateway, activeGeminiGateway === 'vertex' ? 'studio' : 'vertex']
+                : (GEMINI_API_KEY.startsWith('AQ.') ? ['vertex', 'studio'] : ['studio', 'vertex']);
 
             let lastErr = "Gemini connection failed.";
             let authStatus = null;
@@ -1606,14 +1653,13 @@
                         if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
                             activeGeminiModel = model;
                             activeGeminiGateway = gateway;
-                            localStorage.setItem('md_gemini_model', model);
-                            localStorage.setItem('md_gemini_gateway', gateway);
+                            safeSetStorage('md_gemini_model', model);
+                            safeSetStorage('md_gemini_gateway', gateway);
                             updateAiStatusBadge(model, true);
                             return result.data.candidates[0].content.parts[0].text;
                         }
                         if (result.data?.error) {
                             lastErr = result.data.error.message || `HTTP ${result.status}`;
-                            // If 401/403 on this gateway, switch immediately to try the next gateway
                             if (result.status === 401 || result.status === 403 || lastErr.includes("API key not valid")) {
                                 authStatus = result.status;
                                 break;
@@ -1625,7 +1671,7 @@
                 }
             }
 
-            // Fallback: Auto-discover models on AI Studio if it was a model-not-found issue (not a bad key)
+            // Fallback: Auto-discover models on AI Studio if it was a model-not-found issue
             if (authStatus !== 401 && authStatus !== 403) {
                 try {
                     const discovered = await discoverAvailableGeminiModels();
@@ -1635,8 +1681,8 @@
                         if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
                             activeGeminiModel = model;
                             activeGeminiGateway = 'studio';
-                            localStorage.setItem('md_gemini_model', model);
-                            localStorage.setItem('md_gemini_gateway', 'studio');
+                            safeSetStorage('md_gemini_model', model);
+                            safeSetStorage('md_gemini_gateway', 'studio');
                             updateAiStatusBadge(model, true);
                             return result.data.candidates[0].content.parts[0].text;
                         }
@@ -1657,7 +1703,7 @@
             const dot = document.getElementById('aiStatusDot');
             const text = document.getElementById('aiStatusLabel');
             if (dot && text) {
-                dot.className = ok ? "w-2 h-2 rounded-full bg-brand-leaf animate-pulse" : "w-2 h-2 rounded-full bg-brand-rose";
+                dot.className = ok ? "w-1.5 h-1.5 rounded-full bg-brand-leaf animate-pulse" : "w-1.5 h-1.5 rounded-full bg-brand-rose";
                 text.innerText = ok ? `Live: ${label}` : label;
             }
             const tag = document.getElementById('activeModelTag');
@@ -1668,7 +1714,7 @@
             showModal(
                 '<span class="text-brand-rose"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Gemini API Notice</span>',
                 `<div class="bg-rose-500/10 border border-rose-400/30 rounded-xl p-3 text-xs font-medium mb-3 break-words">${escapeHtml(errMsg)}</div>
-                 <p class="text-xs opacity-80 leading-relaxed">మీ పాత Gemini API Key ఎక్స్‌పైర్ లేదా బ్లాక్ అయ్యి ఉండవచ్చు. <a href="https://aistudio.google.com/api-keys" target="_blank" class="text-neon-cyan underline font-bold">aistudio.google.com/api-keys</a> లో కొత్త కీ క్రియేట్ చేసి <b>API Settings</b> లో పేస్ట్ చేయండి.</p>`,
+                 <p class="text-xs opacity-80 leading-relaxed">మీ Gemini API Key కనెక్షన్ చెక్ చేయండి లేదా <a href="https://aistudio.google.com/api-keys" target="_blank" class="text-neon-cyan underline font-bold">aistudio.google.com/api-keys</a> లో కొత్త కీని <b>API Settings</b> లో పేస్ట్ చేయండి.</p>`,
                 'Open API Settings',
                 () => openApiSettings(),
                 'Close'
@@ -1713,12 +1759,12 @@
                 MEMORY_SHEETDB_URL = document.getElementById('cfgMemorySheet').value.trim();
                 activeGeminiModel = null;
                 activeGeminiGateway = null;
-                localStorage.setItem('md_gemini_key', GEMINI_API_KEY);
-                localStorage.setItem('md_imgbb_key', IMGBB_API_KEY);
-                localStorage.setItem('md_travel_sheet', TRAVEL_SHEETDB_URL);
-                localStorage.setItem('md_memory_sheet', MEMORY_SHEETDB_URL);
-                localStorage.removeItem('md_gemini_model');
-                localStorage.removeItem('md_gemini_gateway');
+                safeSetStorage('md_gemini_key', GEMINI_API_KEY);
+                safeSetStorage('md_imgbb_key', IMGBB_API_KEY);
+                safeSetStorage('md_travel_sheet', TRAVEL_SHEETDB_URL);
+                safeSetStorage('md_memory_sheet', MEMORY_SHEETDB_URL);
+                safeRemoveStorage('md_gemini_model');
+                safeRemoveStorage('md_gemini_gateway');
                 showToast('All API keys updated!');
             }, 'Cancel');
         }
@@ -1729,10 +1775,10 @@
             activeGeminiGateway = null;
             const el = document.getElementById('testConnStatus');
             el.className = "text-[11px] font-bold text-center text-brand-sky";
-            el.innerHTML = `<span class="loader mr-1 align-middle"></span> Testing AI Studio & Vertex gateways...`;
+            el.innerHTML = `<span class="loader mr-1 align-middle"></span> Testing Vertex & AI Studio gateways...`;
             try {
                 const res = await askGemini('Reply only with: Connection OK');
-                localStorage.setItem('md_gemini_key', GEMINI_API_KEY);
+                safeSetStorage('md_gemini_key', GEMINI_API_KEY);
                 el.className = "text-[11px] font-bold text-center text-emerald-500";
                 el.innerText = `Connected (${activeGeminiGateway}) via ${activeGeminiModel} ("${res.trim()}")`;
             } catch (err) {
@@ -1759,7 +1805,6 @@
             `);
             document.getElementById('syncedTripCount').innerText = `${syncedFoldersCount} folders`;
 
-            // Also update active folder in Memory Gallery
             document.getElementById('activeFolderTitle').innerText = `${dest} Diaries`;
             document.getElementById('activeFolderVibe').innerText = `Vibe: ${vibe}`;
 
@@ -1820,7 +1865,7 @@
 
         function selectUnifiedTheme(idx) {
             currentCosmicThemeIdx = idx;
-            localStorage.setItem('md_theme_idx', String(idx));
+            safeSetStorage('md_theme_idx', String(idx));
             applyCosmicThemeVisuals();
             showToast(`Theme synced: ${cosmicThemes[idx].name}`, 'fa-palette text-neon-cyan');
         }
@@ -2088,7 +2133,7 @@
                     if (icon) icon.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
                 }
 
-                // BRIDGE: Auto-push proof photo into Memory Notebook Gallery!
+                // BRIDGE: Auto-push proof photo into Memory Notebook Gallery
                 addPhotoToVaultGallery(taskTitle, "Adventure", url);
 
                 showModal(
@@ -2188,39 +2233,232 @@
             } catch (err) { showApiErrorModal(err.message); }
         }
 
-        // ==================== FESTIVAL CALENDAR TRIP PLANNER (TELUGU / INDIAN / GLOBAL) ====================
+        // ==================== FESTIVAL CALENDAR TRIP PLANNER (LOCAL ALL LANGUAGES / INDIAN / WORLD) ====================
         const festivalCalendars = {
             telugu: [
-                { name: 'Sankranti (సంక్రాంతి)', window: 'Jan · 3-4 Days', dest: 'Konaseema & Araku Valley, AP', highlight: 'Kite flying, Haridasu songs, village feasts & misty valleys' },
-                { name: 'Maha Shivaratri (మహా శివరాత్రి)', window: 'Feb/Mar · Weekend', dest: 'Srisailam, Andhra Pradesh', highlight: 'Sacred night darshan, Nallamala forest drive & Krishna river views' },
-                { name: 'Ugadi (ఉగాది)', window: 'Mar/Apr · Festive Break', dest: 'Tirupati & Hampi', highlight: 'New Year sunrise temples, Ugadi Pachadi & heritage ruins' },
-                { name: 'Bonalu (బోనాలు)', window: 'Jul · Cultural Weekend', dest: 'Hyderabad (Golconda & Old City)', highlight: 'Folk drum processions, temple lights & traditional Telangana feast' },
-                { name: 'Bathukamma & Dasara (బతుకమ్మ & దసరా)', window: 'Oct · 4-Day Break', dest: 'Warangal & Vijayawada', highlight: 'Floral Bathukamma dances, Thousand Pillar Temple & Indrakeeladri lights' },
-                { name: 'Karthika Masam & Diwali (దీపావళి)', window: 'Nov · Sacred Getaway', dest: 'Rajahmundry & Papi Hills', highlight: 'Godavari river cruise, Deepotsavam lamps & riverside camping' }
+                // Telugu (తెలుగు)
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Sankranti (సంక్రాంతి)', window: 'Jan · 3-4 Days', dest: 'Konaseema & Araku Valley, AP', highlight: 'Kite flying, Haridasu songs, village feasts & misty valleys' },
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Maha Shivaratri (మహా శివరాత్రి)', window: 'Feb/Mar · Weekend', dest: 'Srisailam, Andhra Pradesh', highlight: 'Sacred night darshan, Nallamala forest drive & Krishna river views' },
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Ugadi (ఉగాది)', window: 'Mar/Apr · Festive Break', dest: 'Tirupati & Hampi', highlight: 'New Year sunrise temples, Ugadi Pachadi & heritage ruins' },
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Sri Rama Navami (శ్రీరామ నవమి)', window: 'Apr · Devotional Trip', dest: 'Bhadrachalam, Telangana', highlight: 'Grand celestial wedding ritual by the sacred Godavari river' },
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Bonalu (బోనాలు)', window: 'Jul · Cultural Weekend', dest: 'Hyderabad (Golconda & Old City)', highlight: 'Folk drum processions, temple lights & traditional Telangana feast' },
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Bathukamma & Dasara (బతుకమ్మ & దసరా)', window: 'Oct · 4-Day Break', dest: 'Warangal & Vijayawada', highlight: 'Floral Bathukamma dances, Thousand Pillar Temple & Indrakeeladri lights' },
+                { lang: 'telugu', langLabel: 'తెలుగు', name: 'Karthika Masam & Diwali (దీపావళి)', window: 'Nov · Sacred Getaway', dest: 'Rajahmundry & Papi Hills', highlight: 'Godavari river cruise, Deepotsavam lamps & riverside camping' },
+                // Tamil (தமிழ்)
+                { lang: 'tamil', langLabel: 'தமிழ்', name: 'Thai Pongal (பொங்கல்)', window: 'Jan · 4-Day Harvest', dest: 'Madurai & Thanjavur, TN', highlight: 'Jallikattu heritage, Kolam art, sugarcane feasts & Chola temples' },
+                { lang: 'tamil', langLabel: 'தமிழ்', name: 'Thaipusam (தைப்பூசம்)', window: 'Jan/Feb · Spiritual', dest: 'Palani & Rameswaram, TN', highlight: 'Hill temple Kavadi processions, sacred baths & coastal bridges' },
+                { lang: 'tamil', langLabel: 'தமிழ்', name: 'Puthandu & Chithirai Fest (தமிழ் புத்தாண்டு)', window: 'Apr · Cultural Grand', dest: 'Madurai Meenakshi Temple, TN', highlight: 'Tamil New Year celebrations, grand temple chariot & street music' },
+                { lang: 'tamil', langLabel: 'தமிழ்', name: 'Aadi Perukku (ஆடிப்பெருக்கு)', window: 'Aug · Monsoon River', dest: 'Kaveri Delta & Kumbakonam, TN', highlight: 'Monsoon river worship, traditional rice feasts & silk weaving towns' },
+                { lang: 'tamil', langLabel: 'தமிழ்', name: 'Karthigai Deepam (கார்த்திகை தீபம்)', window: 'Nov/Dec · Festival of Lights', dest: 'Tiruvannamalai, TN', highlight: 'Sacred Maha Deepam flame atop Arunachala Hill & Girivalam walk' },
+                // Kannada (ಕನ್ನಡ)
+                { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Mysuru Dasara (ಮೈಸೂರು ದಸರಾ)', window: 'Oct · 10-Day Royal', dest: 'Mysuru, Karnataka', highlight: '100,000 palace bulbs, Jamboo Savari royal parade & cultural concerts' },
+                { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Kannada Ugadi (ಯುಗಾದಿ)', window: 'Mar/Apr · New Year', dest: 'Hampi & Badami, Karnataka', highlight: 'Bevu-Bella new year ritual, UNESCO stone chariots & sunset boulders' },
+                { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Kambala & Karavali Fest (ಕಂಬಳ)', window: 'Nov-Feb · Coastal', dest: 'Mangaluru & Udupi, Karnataka', highlight: 'Traditional coastal buffalo races, Yakshagana folk drama & beaches' },
+                { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Bengaluru Karaga (ಕರಗ)', window: 'Mar/Apr · Heritage Night', dest: 'Old Bengaluru & Coorg', highlight: 'Centuries-old midnight floral procession & coffee estate escape' },
+                // Malayalam (മലയാളം)
+                { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Onam (ഓണം)', window: 'Aug/Sep · 4-Day Harvest', dest: 'Alleppey & Munnar, Kerala', highlight: 'Vallam Kali snake boat races, floral Pookalam & grand 26-dish Sadya' },
+                { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Vishu (വിഷു)', window: 'Apr · New Year', dest: 'Kochi & Guruvayur, Kerala', highlight: 'Golden Vishukkani sunrise, fireworks & backwater village stays' },
+                { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Thrissur Pooram (തൃശ്ശൂർ പൂരം)', window: 'Apr/May · Mega Spectacle', dest: 'Thrissur & Athirappilly, Kerala', highlight: 'Iconic percussion orchestras, parasol displays & grand night fireworks' },
+                { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Theyyam Season (തെയ്യം)', window: 'Dec-Mar · Mystic Folk', dest: 'Kannur & Wayanad, Kerala', highlight: 'Ancient sacred trance-dance rituals, cliff beaches & misty hills' },
+                // Hindi / North (हिन्दी)
+                { lang: 'hindi', langLabel: 'हिन्दी', name: 'Lathmar & Braj Holi (होली)', window: 'Mar · 3-Day Colors', dest: 'Mathura, Vrindavan & Jaipur', highlight: 'Flower Holi, folk songs, historic ghats & colorful palace streets' },
+                { lang: 'hindi', langLabel: 'हिन्दी', name: 'Dev Deepawali (देव दीपावली)', window: 'Nov · Million Lamps', dest: 'Varanasi, Uttar Pradesh', highlight: 'Millions of earthen diyas lighting 84 Ganga ghats & evening boat ride' },
+                { lang: 'hindi', langLabel: 'हिन्दी', name: 'Janmashtami (जन्माष्टमी)', window: 'Aug · Midnight Fest', dest: 'Dwarka & Mathura', highlight: 'Midnight temple chimes, Dahi Handi celebrations & festive bazaars' },
+                { lang: 'hindi', langLabel: 'हिन्दी', name: 'Maha Kumbh & Ganga Dussehra (गंगा दशहरा)', window: 'Jan / Jun · Sacred', dest: 'Prayagraj & Rishikesh', highlight: 'Grand river Aarti, sacred sunrise dips & Himalayan spiritual trails' },
+                // Marathi (मराठी)
+                { lang: 'marathi', langLabel: 'मराठी', name: 'Ganeshotsav (गणेशोत्सव)', window: 'Sep · 10-Day Grand', dest: 'Mumbai & Pune, Maharashtra', highlight: 'Artistic pandals, dhol-tasha beats, modak feasts & coastal parades' },
+                { lang: 'marathi', langLabel: 'मराठी', name: 'Gudi Padwa (गुढी पाडवा)', window: 'Mar/Apr · New Year', dest: 'Nashik & Lonavala, Maharashtra', highlight: 'Traditional Shobha Yatra rallies, Puran Poli & Sahyadri hill views' },
+                { lang: 'marathi', langLabel: 'मराठी', name: 'Ashadhi Wari (आषाढी वारी)', window: 'Jun/Jul · Monsoon Trek', dest: 'Pandharpur & Mahabaleshwar', highlight: 'Soulful Abhang chanting, lush Sahyadri waterfalls & heritage forts' },
+                // Bengali (বাংলা)
+                { lang: 'bengali', langLabel: 'বাংলা', name: 'Durga Puja (দুর্গা পূজা)', window: 'Oct · 5-Day UNESCO Fest', dest: 'Kolkata, West Bengal', highlight: 'Art-museum pandal hopping, dhak rhythms & midnight street food' },
+                { lang: 'bengali', langLabel: 'বাংলা', name: 'Pohela Boishakh (পহেলা বৈশাখ)', window: 'Apr · New Year', dest: 'Kolkata & Shantiniketan', highlight: 'Tagore melodies, cultural processions & authentic Bengali sweets' },
+                { lang: 'bengali', langLabel: 'বাংলা', name: 'Poush Mela (পৌষ মেলা)', window: 'Dec · Winter Folk', dest: 'Shantiniketan, West Bengal', highlight: 'Mystic Baul folk musicians, handmade crafts & rustic winter fairs' },
+                // Gujarati (ગુજરાતી)
+                { lang: 'gujarati', langLabel: 'ગુજરાતી', name: 'Navratri Garba (નવરાત્રી)', window: 'Oct · 9 Nights Dance', dest: 'Vadodara & Ahmedabad, Gujarat', highlight: 'Massive traditional Garba circles, mirror-work outfits & night snacks' },
+                { lang: 'gujarati', langLabel: 'ગુજરાતી', name: 'Uttarayan Kite Fest (ઉત્તરાયણ)', window: 'Jan · Sky Festival', dest: 'Ahmedabad & Kutch, Gujarat', highlight: 'International kite carnival, rooftop Undhiyu feasts & sky lanterns' },
+                { lang: 'gujarati', langLabel: 'ગુજરાતી', name: 'Rann Utsav (રણ ઉત્સવ)', window: 'Nov-Feb · White Desert', dest: 'Rann of Kutch, Gujarat', highlight: 'Full-moon white salt desert, luxury tents & Kutchi folk music' },
+                // Punjabi (ਪੰਜਾਬੀ)
+                { lang: 'punjabi', langLabel: 'ਪੰਜਾਬੀ', name: 'Baisakhi (ਵਿਸਾਖੀ)', window: 'Apr · Harvest Joy', dest: 'Amritsar, Punjab', highlight: 'Golden Temple illumination, energetic Bhangra & legendary langar' },
+                { lang: 'punjabi', langLabel: 'ਪੰਜਾਬੀ', name: 'Lohri & Gurpurab (ਲੋਹੜੀ)', window: 'Jan / Nov · Bonfire', dest: 'Amritsar & Chandigarh', highlight: 'Winter folk bonfires, Giddha dance, sarson saag & sacred kirtans' },
+                { lang: 'punjabi', langLabel: 'ਪੰਜਾਬੀ', name: 'Hola Mohalla (ਹੋਲਾ ਮਹੱਲਾ)', window: 'Mar · Martial Arts', dest: 'Anandpur Sahib, Punjab', highlight: 'Spectacular Gatka displays, horse riding & vibrant Sikh heritage fair' },
+                // Odia (ଓଡ଼ିଆ)
+                { lang: 'odia', langLabel: 'ଓଡ଼ିଆ', name: 'Puri Rath Yatra (ରଥଯାତ୍ରା)', window: 'Jun/Jul · Chariot Fest', dest: 'Puri & Konark, Odisha', highlight: 'Colossal wooden chariots, oceanfront beaches & Sun Temple architecture' },
+                { lang: 'odia', langLabel: 'ଓଡ଼ିଆ', name: 'Konark Dance Festival (କୋଣାର୍କ)', window: 'Dec · Classical Arts', dest: 'Konark & Chilika Lake, Odisha', highlight: 'Open-air Odissi dance by the Sun Temple & dolphin lagoon cruise' },
+                { lang: 'odia', langLabel: 'ଓଡ଼ିଆ', name: 'Nuakhai & Raja Parba (ନୂଆଖାଇ)', window: 'Jun / Sep · Harvest', dest: 'Sambalpur & Bhubaneswar, Odisha', highlight: 'Swing songs, traditional Pitha sweets & lush Eastern Ghats trails' },
+                // Assamese & North-East (অসমীয়া & NE)
+                { lang: 'northeast', langLabel: 'অসমীয়া / NE', name: 'Bohag Bihu (বহাগ বিহু)', window: 'Apr · Spring Fest', dest: 'Guwahati & Kaziranga, Assam', highlight: 'Joyful Bihu dance, Brahmaputra sunset cruises & rhino safaris' },
+                { lang: 'northeast', langLabel: 'NE / Nagaland', name: 'Hornbill Festival', window: 'Dec · 10-Day Tribal', dest: 'Kohima, Nagaland', highlight: 'Festival of Festivals showcasing 16 Naga tribes, rock nights & hills' },
+                { lang: 'northeast', langLabel: 'NE / Manipur', name: 'Sangai & Yaoshang Festival', window: 'Mar / Nov · Culture', dest: 'Imphal & Loktak Lake, Manipur', highlight: 'Floating lake islands, classical Ras Leela dance & folk sports' },
+                { lang: 'northeast', langLabel: 'NE / Arunachal', name: 'Losar & Ziro Music Fest', window: 'Feb / Sep · Mountain', dest: 'Tawang & Ziro Valley, Arunachal', highlight: 'Himalayan monastery dances, pine-valley indie music & tribal hospitality' },
+                // Urdu / Islamic (اردو / Eid)
+                { lang: 'urdu', langLabel: 'اردو / Eid', name: 'Eid-ul-Fitr / Ramzan (عید الفطر)', window: 'Lunar · Night Markets', dest: 'Hyderabad & Old Delhi', highlight: 'Charminar night bazaars, authentic Haleem, Sheer Kurma & festive lights' },
+                { lang: 'urdu', langLabel: 'اردو / Eid', name: 'Eid-ul-Adha & Ajmer Urs (عرس)', window: 'Lunar · Sufi Heritage', dest: 'Ajmer & Lucknow', highlight: 'Soulful Qawwali nights, Nawabi heritage walks & royal Awadhi cuisine' },
+                // Bhojpuri / Maithili (भोजपुरी / मैथिली)
+                { lang: 'bhojpuri', langLabel: 'भोजपुरी / मैथिली', name: 'Chhath Puja (छठ पूजा)', window: 'Oct/Nov · Sun Worship', dest: 'Patna, Gaya & Varanasi', highlight: 'Sacred dawn & dusk Arghya rituals, folk songs & Thekua delicacies' },
+                { lang: 'bhojpuri', langLabel: 'भोजपुरी / मैथिली', name: 'Sonepur Mela & Vivah Panchami', window: 'Nov/Dec · Grand Fair', dest: 'Sonepur & Janakpur', highlight: 'Asia’s oldest riverfront heritage fair, folk theatre & temple lights' },
+                // Rajasthani / Marwari (राजस्थानी)
+                { lang: 'rajasthani', langLabel: 'राजस्थानी', name: 'Gangaur & Teej (गणगौर / तीज)', window: 'Mar / Aug · Royal', dest: 'Jaipur & Udaipur, Rajasthan', highlight: 'Royal palace processions, Ghewar sweets, lakeside fireworks & folk dances' },
+                { lang: 'rajasthani', langLabel: 'राजस्थानी', name: 'Jaisalmer Desert Festival (मरु महोत्सव)', window: 'Feb · Golden Dunes', dest: 'Jaisalmer, Rajasthan', highlight: 'Sam sand dunes camel races, Kalbelia folk dance & starlit desert camps' },
+                // Konkani / Goan (कोंकणी)
+                { lang: 'konkani', langLabel: 'कोंकणी', name: 'Shigmo & Goa Carnival (शिगमो)', window: 'Feb/Mar · Coastal', dest: 'Panaji, Old Goa & South Goa', highlight: 'Vibrant street floats, Ghode Modni folk dance, samba music & beach feasts' },
+                { lang: 'konkani', langLabel: 'कोंकणी', name: 'Sao Joao Monsoon Fest', window: 'Jun · Monsoon Splash', dest: 'Siolim & North Goa', highlight: 'Floral crowns, traditional boat parades & lively Goan village feasts' },
+                // Kashmiri & Himalayan (کٲشُر / पहाड़ी)
+                { lang: 'kashmiri', langLabel: 'کٲشُر / Himalayan', name: 'Tulip Fest & Shikara Carnival', window: 'Apr · Spring Valley', dest: 'Srinagar & Pahalgam, Kashmir', highlight: 'Asia’s largest tulip garden in bloom, Dal Lake houseboats & Kahwa tea' },
+                { lang: 'kashmiri', langLabel: 'कश्मीरी / हिमालयी', name: 'Kullu Dussehra & Herath', window: 'Feb / Oct · Mountain', dest: 'Kullu-Manali & Srinagar', highlight: 'Mountain valley deity processions, Nati folk dances & snow-peak views' },
+                // Parsi, Jain, Buddhist & Christian
+                { lang: 'heritage', langLabel: 'Parsi / Jain / Buddhist', name: 'Navroz (Parsi New Year)', window: 'Mar / Aug · Heritage', dest: 'Mumbai & Udvada, Gujarat', highlight: 'Chalk-art courtyards, Irani cafés, Berry Pulao & colonial heritage walks' },
+                { lang: 'heritage', langLabel: 'Parsi / Jain / Buddhist', name: 'Mahavir Jayanti & Paryushan', window: 'Apr / Sep · Serene', dest: 'Palitana & Mount Abu', highlight: 'Marble hilltop temples, peaceful sunrise climbs & pure sattvik cuisine' },
+                { lang: 'heritage', langLabel: 'Parsi / Jain / Buddhist', name: 'Buddha Purnima & Saga Dawa', window: 'May · Lantern Peace', dest: 'Bodh Gaya, Sikkim & Ladakh', highlight: 'Butter-lamp monasteries, prayer flags & peaceful mountain retreats' },
+                { lang: 'heritage', langLabel: 'Christian / Christmas', name: 'Christmas & Feast of St. Francis', window: 'Dec · Festive Lights', dest: 'Goa, Kochi & Shillong', highlight: 'Illuminated heritage churches, carol parades, plum cakes & night markets' }
             ],
             indian: [
-                { name: 'Holi Festival', window: 'Mar · 3-Day Break', dest: 'Pushkar & Jaipur, Rajasthan', highlight: 'Vibrant colors, folk music & heritage desert forts' },
-                { name: 'Onam Harvest Fest', window: 'Aug/Sep · 4-Day Break', dest: 'Alleppey & Munnar, Kerala', highlight: 'Vallam Kali snake boat races, Pookalam & grand Onam Sadya' },
-                { name: 'Ganesh Chaturthi', window: 'Sep · Weekend Trip', dest: 'Mumbai & Lonavala, Maharashtra', highlight: 'Grand pandal artistry, coastal drives & monsoon hills' },
-                { name: 'Durga Puja', window: 'Oct · 5-Day Break', dest: 'Kolkata, West Bengal', highlight: 'Illuminated heritage pandals, dhak beats & iconic street food' }
+                { lang: 'pan-india', langLabel: 'Pan-India', name: 'Diwali (Festival of Lights)', window: 'Oct/Nov · 5-Day Break', dest: 'Jaipur, Ayodhya & Udaipur', highlight: 'Illuminated royal palaces, lakeside fireworks & festive night markets' },
+                { lang: 'north', langLabel: 'North India', name: 'Holi Color Festival', window: 'Mar · 3-Day Break', dest: 'Pushkar, Mathura & Jaipur', highlight: 'Vibrant colors, folk music, courtyard parties & heritage desert forts' },
+                { lang: 'west', langLabel: 'West India', name: 'Goa Carnival & Sunburn', window: 'Feb / Dec · Coastal', dest: 'Panaji & North Goa', highlight: 'Colorful street floats, samba parades, beach shacks & live music' },
+                { lang: 'south', langLabel: 'South India', name: 'Onam & Pongal Trail', window: 'Aug / Jan · Harvest', dest: 'Alleppey & Madurai', highlight: 'Snake boat races, ancient temple towns & banana-leaf royal feasts' },
+                { lang: 'south', langLabel: 'South India', name: 'Sankranti & Hampi Utsav', window: 'Jan · Heritage & Kites', dest: 'Konaseema & Hampi', highlight: 'Golden harvest villages, sky-full of kites & illuminated stone temples' },
+                { lang: 'east', langLabel: 'East India', name: 'Durga Puja & Rath Yatra', window: 'Oct / Jul · Heritage', dest: 'Kolkata & Puri', highlight: 'UNESCO cultural pandals, coastal temple chariots & iconic street food' },
+                { lang: 'north', langLabel: 'North India', name: 'Hemis Monastery Festival', window: 'Jun/Jul · Himalayan', dest: 'Leh-Ladakh', highlight: 'Masked Cham dances in snow-peaked valleys & Pangong Lake road trip' },
+                { lang: 'west', langLabel: 'West India', name: 'Pushkar Camel & Rann Utsav', window: 'Nov-Feb · Desert Moon', dest: 'Pushkar & Rann of Kutch', highlight: 'Hot-air balloons over dunes, white salt desert & folk glamping' },
+                { lang: 'pan-india', langLabel: 'Pan-India', name: 'Christmas & Winter Carnival', window: 'Dec · 4-Day Holiday', dest: 'Goa, Shillong & Shimla', highlight: 'Midnight carols, pine-hill cafes, snowy promenades & beach parties' },
+                { lang: 'pan-india', langLabel: 'Pan-India', name: 'Eid-ul-Fitr & Sufi Nights', window: 'Lunar · Culinary', dest: 'Hyderabad, Delhi & Lucknow', highlight: 'Charminar & Jama Masjid night markets, biryani trails & Qawwali' },
+                { lang: 'pan-india', langLabel: 'Pan-India', name: 'Buddha Purnima & Yoga Fest', window: 'Mar / May · Wellness', dest: 'Bodh Gaya & Rishikesh', highlight: 'Lantern prayers, Himalayan yoga retreats & serene evening Ganga Aarti' },
+                { lang: 'east', langLabel: 'East & NE India', name: 'Hornbill & Cherry Blossom Fest', window: 'Nov / Dec · Hills', dest: 'Shillong & Kohima', highlight: 'Autumn pink cherry blossoms, Naga tribal showcase & misty waterfalls' }
             ],
             global: [
-                { name: 'Christmas & Winter', window: 'Dec · 4-Day Holiday', dest: 'Goa & Shillong', highlight: 'Beach carnivals, midnight carols & cozy pine-hill cafes' },
-                { name: 'New Year Countdown', window: 'Dec/Jan · 3-Day Escape', dest: 'Gokarna or Dubai', highlight: 'Starlit beach bonfires, skyline fireworks & fresh beginnings' },
-                { name: 'Sakura Cherry Blossom', window: 'Apr · Spring Trip', dest: 'Kyoto, Japan', highlight: 'Pink blossom tunnels, serene shrines & traditional tea houses' },
-                { name: 'Songkran Water Fest', window: 'Apr · 4-Day Adventure', dest: 'Chiang Mai, Thailand', highlight: 'Citywide water celebrations, temple visits & night markets' }
+                // Japanese (日本語)
+                { lang: 'japanese', langLabel: '🇯🇵 日本語 (Japanese)', name: 'Sakura Cherry Blossom (桜 / Hanami)', window: 'Mar/Apr · Spring', dest: 'Kyoto & Tokyo, Japan', highlight: 'Pink blossom tunnels, Hanami picnics, shrines & serene tea houses' },
+                { lang: 'japanese', langLabel: '🇯🇵 日本語 (Japanese)', name: 'Gion Matsuri & Sapporo Snow Fest', window: 'Jul / Feb · Iconic', dest: 'Kyoto & Sapporo, Japan', highlight: 'Towering lantern floats or giant illuminated ice sculptures in snow' },
+                // Chinese / Mandarin (中文)
+                { lang: 'chinese', langLabel: '🇨🇳 中文 (Chinese)', name: 'Lunar New Year & Lantern Fest (春节)', window: 'Jan/Feb · 7 Days', dest: 'Singapore, Taipei & Hong Kong', highlight: 'Dragon parades, glowing sky lanterns, fireworks & night street food' },
+                { lang: 'chinese', langLabel: '🇨🇳 中文 (Chinese)', name: 'Mid-Autumn Mooncake Fest (中秋节)', window: 'Sep/Oct · Full Moon', dest: 'Hong Kong & Beijing', highlight: 'Fire dragon dance, glowing paper lanterns & riverside moon viewing' },
+                // Korean (한국어)
+                { lang: 'korean', langLabel: '🇰🇷 한국어 (Korean)', name: 'Chuseok & Seoul Lantern Fest (추석)', window: 'Sep / Nov · Culture', dest: 'Seoul & Busan, South Korea', highlight: 'Hanbok palace tours, illuminated Cheonggyecheon stream & K-street food' },
+                { lang: 'korean', langLabel: '🇰🇷 한국어 (Korean)', name: 'Jinhae Gunhangje Cherry Blossom', window: 'Apr · Romance', dest: 'Jinhae & Jeju Island, Korea', highlight: 'Blossom-lined bridges, coastal volcanic trails & lively night markets' },
+                // Thai / Vietnamese / Indonesian (SE Asia)
+                { lang: 'seasia', langLabel: '🇹🇭 ไทย (Thai)', name: 'Songkran & Yi Peng Lanterns (สงกรานต์)', window: 'Apr / Nov · Magic', dest: 'Chiang Mai & Bangkok, Thailand', highlight: 'Citywide water celebrations or thousands of floating sky lanterns' },
+                { lang: 'seasia', langLabel: '🇮🇩 Bahasa (Indonesian)', name: 'Nyepi & Bali Spirit Festival', window: 'Mar/Apr · Wellness', dest: 'Ubud & Seminyak, Bali', highlight: 'Ogoh-Ogoh giant parades, Day of Silence stargazing & jungle yoga' },
+                { lang: 'seasia', langLabel: '🇻🇳 Tiếng Việt (Vietnamese)', name: 'Tết New Year & Hoi An Lanterns', window: 'Jan/Feb · Glowing', dest: 'Hoi An & Hanoi, Vietnam', highlight: 'Silk-lantern old town rivers, flower markets & Pho culinary walks' },
+                // Spanish (Español)
+                { lang: 'spanish', langLabel: '🇪🇸 Español (Spanish)', name: 'La Tomatina & Las Fallas', window: 'Aug / Mar · Fiesta', dest: 'Valencia & Buñol, Spain', highlight: 'Iconic tomato fight, towering artistic sculptures & Mediterranean tapas' },
+                { lang: 'spanish', langLabel: '🇲🇽 Español (Mexican)', name: 'Día de los Muertos', window: 'Nov · Heritage', dest: 'Oaxaca & Mexico City, Mexico', highlight: 'Marigold flower altars, candlelit parades, folk art & authentic tacos' },
+                { lang: 'spanish', langLabel: '🇵🇪 Español / Quechua', name: 'Inti Raymi (Festival of the Sun)', window: 'Jun · Ancient Inca', dest: 'Cusco & Machu Picchu, Peru', highlight: 'Andean solstice pageantry, mountain trains & cloud-forest ruins' },
+                // German (Deutsch)
+                { lang: 'german', langLabel: '🇩🇪 Deutsch (German)', name: 'Oktoberfest & Christmas Markets', window: 'Sep / Dec · Classic', dest: 'Munich & Bavaria, Germany', highlight: 'Bavarian brass bands, Alpine castles, fair rides & fairy-lit winter stalls' },
+                // Italian (Italiano)
+                { lang: 'italian', langLabel: '🇮🇹 Italiano (Italian)', name: 'Venice Carnival (Carnevale)', window: 'Feb · Masquerade', dest: 'Venice, Italy', highlight: 'Ornate Venetian masks, grand canal gondola parades & baroque balls' },
+                { lang: 'italian', langLabel: '🇮🇹 Italiano (Italian)', name: 'Palio di Siena & Infiorata', window: 'Jun / Jul · Tuscan', dest: 'Siena & Amalfi Coast, Italy', highlight: 'Historic piazza spectacles, flower-carpet streets & coastal gelato' },
+                // French (Français)
+                { lang: 'french', langLabel: '🇫🇷 Français (French)', name: 'Bastille Day & Nice Carnival', window: 'Jul / Feb · Riviera', dest: 'Paris & Nice, France', highlight: 'Eiffel Tower fireworks, Riviera flower parades & boulevard cafés' },
+                { lang: 'french', langLabel: '🇫🇷 Français (French)', name: 'Fête des Lumières (Festival of Lights)', window: 'Dec · Projections', dest: 'Lyon, France', highlight: 'Monumental light art across historic squares & gourmet French bistros' },
+                // Portuguese (Português)
+                { lang: 'portuguese', langLabel: '🇧🇷 Português (Brazilian)', name: 'Rio de Janeiro Carnival', window: 'Feb/Mar · 5 Days', dest: 'Rio de Janeiro, Brazil', highlight: 'Sambadrome parades, Copacabana beach rhythms & vibrant street blocos' },
+                { lang: 'portuguese', langLabel: '🇵🇹 Português (Portuguese)', name: 'Festas de Lisboa (Santo António)', window: 'Jun · Street Party', dest: 'Lisbon, Portugal', highlight: 'Alfama cobblestone street music, colorful bunting & oceanfront trams' },
+                // English (UK / USA / Ireland / Australia)
+                { lang: 'english', langLabel: '🇬🇧 English (UK / Scotland)', name: 'Edinburgh Fringe & Hogmanay', window: 'Aug / Dec · Arts', dest: 'Edinburgh, Scotland', highlight: 'World’s largest arts festival, historic castles & torchlight New Year' },
+                { lang: 'english', langLabel: '🇺🇸 English (USA)', name: 'Mardi Gras & Albuquerque Balloons', window: 'Feb / Oct · Iconic', dest: 'New Orleans & New Mexico, USA', highlight: 'Jazz street parades or 500 hot-air balloons rising at sunrise' },
+                { lang: 'english', langLabel: '🇮🇪 English / Irish', name: 'St. Patrick’s Festival', window: 'Mar · Emerald Isle', dest: 'Dublin & Galway, Ireland', highlight: 'Emerald city parades, lively folk music sessions & cliff coastal drives' },
+                { lang: 'english', langLabel: '🇦🇺 English (Oceania)', name: 'Vivid Sydney & Matariki', window: 'May/Jun · Lights', dest: 'Sydney & Queenstown, NZ', highlight: '3D Opera House light art, harbor cruises & Southern Alps stargazing' },
+                // Arabic, Persian & Turkish
+                { lang: 'arabic', langLabel: '🇦🇪 العربية (Arabic)', name: 'Dubai Shopping & New Year Fest', window: 'Dec/Jan · Luxury', dest: 'Dubai & Abu Dhabi, UAE', highlight: 'Burj Khalifa fireworks, desert safaris, global village & drone shows' },
+                { lang: 'arabic', langLabel: '🇲🇦 العربية (Moroccan)', name: 'Fes Sacred Music & Rose Festival', window: 'May/Jun · Exotic', dest: 'Fes & Marrakech, Morocco', highlight: 'Medina courtyard concerts, Sahara camel camps & lantern souks' },
+                { lang: 'arabic', langLabel: '🇮🇷 فارسی / 🇹🇷 Türkçe', name: 'Nowruz & Cappadocia Balloon Fest', window: 'Mar / Jul · Sky Magic', dest: 'Cappadocia & Istanbul, Turkey', highlight: 'Spring equinox feasts, fairy chimneys & sunrise hot-air balloons' },
+                // Nordic, Greek & Slavic
+                { lang: 'nordic', langLabel: '🇮🇸 🇸🇪 Nordic', name: 'Northern Lights & Midsummer Fest', window: 'Feb / Jun · Aurora', dest: 'Reykjavik & Stockholm', highlight: 'Dancing Aurora Borealis, geothermal lagoons or midnight-sun islands' },
+                { lang: 'nordic', langLabel: '🇬🇷 Ελληνικά (Greek)', name: 'Greek Easter & Athens Epidaurus', window: 'Apr / Jul · Aegean', dest: 'Santorini & Athens, Greece', highlight: 'Candlelit cliffside villages, ancient open-air theatre & turquoise coves' },
+                // African Languages (Swahili / Zulu / Amharic)
+                { lang: 'african', langLabel: '🇹🇿 🇿🇦 🇪🇹 African', name: 'Sauti za Busara & Timkat Fest', window: 'Jan / Feb · Rhythm', dest: 'Zanzibar & Cape Town', highlight: 'Swahili coastal music under spice-island stars, safaris & ocean views' }
+            ]
+        };
+
+        const festivalSubFilters = {
+            telugu: [
+                { key: 'telugu', label: '🪔 తెలుగు (Telugu)' },
+                { key: 'all', label: '✨ All Languages (అన్ని భాషలు)' },
+                { key: 'tamil', label: '🌺 தமிழ் (Tamil)' },
+                { key: 'kannada', label: '👑 ಕನ್ನಡ (Kannada)' },
+                { key: 'malayalam', label: '🌴 മലയാളം (Malayalam)' },
+                { key: 'hindi', label: '🎨 हिन्दी (Hindi)' },
+                { key: 'marathi', label: '🥁 मराठी (Marathi)' },
+                { key: 'bengali', label: '🪷 বাংলা (Bengali)' },
+                { key: 'gujarati', label: '💃 ગુજરાતી (Gujarati)' },
+                { key: 'punjabi', label: '🌾 ਪੰਜਾਬੀ (Punjabi)' },
+                { key: 'odia', label: '🛕 ଓଡ଼ିଆ (Odia)' },
+                { key: 'northeast', label: '🏔️ অসমীয়া & North-East' },
+                { key: 'urdu', label: '🌙 اردو / Islamic (Eid)' },
+                { key: 'bhojpuri', label: '☀️ भोजपुरी / मैथिली' },
+                { key: 'rajasthani', label: '🏜️ राजस्थानी / Marwari' },
+                { key: 'konkani', label: '🐚 कोंकणी / Goan' },
+                { key: 'kashmiri', label: '❄️ کٲشُر / Himalayan' },
+                { key: 'heritage', label: '🕊️ Parsi / Jain / Buddhist / Christmas' }
+            ],
+            indian: [
+                { key: 'all', label: '🇮🇳 All Indian Festivals' },
+                { key: 'pan-india', label: '✨ Pan-India Celebrations' },
+                { key: 'north', label: '🏔️ North India' },
+                { key: 'south', label: '🌴 South India' },
+                { key: 'east', label: '🪷 East & North-East India' },
+                { key: 'west', label: '🏜️ West & Coastal India' }
+            ],
+            global: [
+                { key: 'all', label: '🌍 All World Languages & Festivals' },
+                { key: 'japanese', label: '🇯🇵 日本語 (Japanese)' },
+                { key: 'chinese', label: '🇨🇳 中文 (Chinese / Mandarin)' },
+                { key: 'korean', label: '🇰🇷 한국어 (Korean)' },
+                { key: 'seasia', label: '🌏 Thai / Indonesian / Vietnamese' },
+                { key: 'spanish', label: '🇪🇸 Español (Spain / Mexico / Peru)' },
+                { key: 'french', label: '🇫🇷 Français (French)' },
+                { key: 'german', label: '🇩🇪 Deutsch (German)' },
+                { key: 'italian', label: '🇮🇹 Italiano (Italian)' },
+                { key: 'portuguese', label: '🇧🇷 Português (Brazil / Portugal)' },
+                { key: 'english', label: '🌐 English (UK / USA / Ireland / AUS)' },
+                { key: 'arabic', label: '🕌 العربية / فارسی / Türkçe' },
+                { key: 'nordic', label: '❄️ Nordic & Ελληνικά (Greek)' },
+                { key: 'african', label: '🥁 Swahili / African Festivals' }
             ]
         };
 
         let activeFestivalCalendar = 'telugu';
+        let activeFestivalSubFilter = {
+            telugu: 'telugu',
+            indian: 'all',
+            global: 'all'
+        };
+        let festivalSearchQuery = '';
+        let currentDisplayedFestivals = [];
 
         function renderFestivalCalendarHTML() {
             const tabs = [
-                { key: 'telugu', label: '🪔 తెలుగు' },
+                { key: 'telugu', label: '🪔 Local / తెలుగు' },
                 { key: 'indian', label: '🇮🇳 Indian' },
-                { key: 'global', label: '🌍 Global' }
+                { key: 'global', label: '🌍 World' }
             ];
-            const items = festivalCalendars[activeFestivalCalendar] || festivalCalendars.telugu;
+            const allTabItems = festivalCalendars[activeFestivalCalendar] || festivalCalendars.telugu;
+            const selectedFilter = activeFestivalSubFilter[activeFestivalCalendar] || 'all';
+            const subOptions = festivalSubFilters[activeFestivalCalendar] || [];
+            const q = festivalSearchQuery.trim().toLowerCase();
+
+            // Filter by selected language/region AND live search query across all festivals
+            let filtered = selectedFilter === 'all'
+                ? allTabItems
+                : allTabItems.filter(f => f.lang === selectedFilter);
+
+            if (q) {
+                // If user types a festival/language in search, search across ALL tabs so every festival is reachable
+                const allFestsPool = [
+                    ...festivalCalendars.telugu,
+                    ...festivalCalendars.indian,
+                    ...festivalCalendars.global
+                ];
+                filtered = allFestsPool.filter(f =>
+                    f.name.toLowerCase().includes(q) ||
+                    f.dest.toLowerCase().includes(q) ||
+                    (f.langLabel || '').toLowerCase().includes(q) ||
+                    f.highlight.toLowerCase().includes(q)
+                );
+            }
+
+            currentDisplayedFestivals = filtered;
 
             const tabButtons = tabs.map(t => `
                 <button type="button" onclick="switchFestivalCalendar('${t.key}')" class="flex-1 py-2 rounded-xl text-[11px] font-bold transition ${activeFestivalCalendar === t.key ? 'bg-gradient-to-r from-neon-amber to-orange-500 text-cosmic-900 shadow' : 'bg-white/5 text-gray-300 hover:bg-white/10'}">
@@ -2228,47 +2466,127 @@
                 </button>
             `).join('');
 
-            const cards = items.map((f, idx) => `
-                <div class="bg-white/5 border border-white/10 hover:border-neon-amber/40 rounded-2xl p-3 transition text-left">
-                    <div class="flex justify-between items-start gap-2 mb-1">
-                        <h4 class="text-xs font-bold text-white leading-snug">${escapeHtml(f.name)}</h4>
-                        <span class="font-mono text-[9px] bg-neon-amber/15 text-neon-amber px-2 py-0.5 rounded-full shrink-0">${escapeHtml(f.window)}</span>
-                    </div>
-                    <p class="text-[10px] text-neon-cyan font-semibold mb-1"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(f.dest)}</p>
-                    <p class="text-[10px] text-gray-400 leading-relaxed mb-2.5">${escapeHtml(f.highlight)}</p>
-                    <button type="button" onclick="planPresetFestival('${activeFestivalCalendar}', ${idx})" class="tactile-btn w-full bg-neon-cyan/15 hover:bg-neon-cyan hover:text-cosmic-900 text-neon-cyan border border-neon-cyan/35 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center">
-                        <i class="fa-solid fa-route mr-1.5"></i> Plan Festival Trip with AI
-                    </button>
-                </div>
+            const selectOptionsHTML = subOptions.map(opt => `
+                <option value="${opt.key}" class="bg-cosmic-800 text-white" ${selectedFilter === opt.key ? 'selected' : ''}>${opt.label}</option>
             `).join('');
 
+            const cards = currentDisplayedFestivals.length
+                ? currentDisplayedFestivals.map((f, idx) => `
+                    <div class="bg-white/5 border border-white/10 hover:border-neon-amber/40 rounded-2xl p-3 transition text-left">
+                        <div class="flex justify-between items-start gap-2 mb-1">
+                            <h4 class="text-xs font-bold text-white leading-snug">${escapeHtml(f.name)}</h4>
+                            <span class="font-mono text-[9px] bg-neon-amber/15 text-neon-amber px-2 py-0.5 rounded-full shrink-0">${escapeHtml(f.window)}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <p class="text-[10px] text-neon-cyan font-semibold truncate"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(f.dest)}</p>
+                            <span class="text-[9px] font-bold text-neon-pink bg-neon-pink/15 px-2 py-0.5 rounded-full shrink-0">${escapeHtml(f.langLabel || '')}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 leading-relaxed mb-2.5">${escapeHtml(f.highlight)}</p>
+                        <button type="button" onclick="planDisplayedFestival(${idx})" class="tactile-btn w-full bg-neon-cyan/15 hover:bg-neon-cyan hover:text-cosmic-900 text-neon-cyan border border-neon-cyan/35 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center">
+                            <i class="fa-solid fa-route mr-1.5"></i> Plan Festival Trip with AI
+                        </button>
+                    </div>
+                `).join('')
+                : `<div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                       <p class="text-xs text-gray-300 font-semibold mb-2">No preset match for "${escapeHtml(festivalSearchQuery)}"</p>
+                       <button type="button" onclick="planCustomFestivalTrip()" class="tactile-btn bg-neon-amber text-cosmic-900 font-bold px-4 py-2 rounded-xl text-xs">
+                           <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Plan "${escapeHtml(festivalSearchQuery)}" with AI
+                       </button>
+                   </div>`;
+
             return `
-                <div class="space-y-3">
+                <div class="space-y-2.5">
                     <div class="flex gap-1.5 p-1 bg-black/40 rounded-2xl border border-white/10">${tabButtons}</div>
+                    <!-- All Languages & Calendar Selector right beside/below Local (తెలుగు) / Indian / World -->
+                    <div class="flex items-center gap-2 bg-white/5 border border-neon-amber/35 rounded-xl px-2.5 py-2">
+                        <i class="fa-solid fa-language text-neon-amber text-xs shrink-0"></i>
+                        <select id="festivalLangSelect" onchange="switchFestivalSubFilter(this.value)" class="flex-1 bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer">
+                            ${selectOptionsHTML}
+                        </select>
+                        <span class="font-mono text-[9px] text-neon-cyan bg-neon-cyan/15 px-2 py-0.5 rounded-full shrink-0">${currentDisplayedFestivals.length} fests</span>
+                    </div>
+                    <!-- Live Search or Any Custom Festival in Any Language -->
                     <div class="flex gap-1.5">
-                        <input id="customFestivalInput" type="text" placeholder="Any festival? (e.g., Rama Navami, Eid)" class="flex-1 bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neon-amber">
+                        <input id="customFestivalInput" type="text" value="${escapeHtml(festivalSearchQuery)}" oninput="filterFestivalList(this.value)" placeholder="Search or type any festival/language..." class="flex-1 bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neon-amber">
                         <button type="button" onclick="planCustomFestivalTrip()" class="tactile-btn bg-neon-amber text-cosmic-900 font-bold px-3 py-2 rounded-xl text-xs shrink-0">Plan</button>
                     </div>
-                    <div class="space-y-2.5 max-h-64 overflow-y-auto hide-scroll pr-0.5">${cards}</div>
+                    <div id="festivalCardsContainer" class="space-y-2.5 max-h-60 overflow-y-auto hide-scroll pr-0.5">
+                        ${cards}
+                        <button type="button" onclick="fetchMoreLanguageFestivals()" class="tactile-btn w-full py-2.5 rounded-xl border border-dashed border-neon-amber/45 bg-neon-amber/10 text-neon-amber font-bold text-[11px] hover:bg-neon-amber hover:text-cosmic-900 transition flex items-center justify-center">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Load More Festivals with AI
+                        </button>
+                    </div>
                 </div>
             `;
         }
 
         function openFestivalCalendarPlanner() {
+            festivalSearchQuery = '';
             showModal('Festival Calendar Trips', renderFestivalCalendarHTML(), 'Close');
         }
 
         function switchFestivalCalendar(calKey) {
             activeFestivalCalendar = calKey;
+            festivalSearchQuery = '';
             const msgBox = document.getElementById('modalMessage');
             if (msgBox) msgBox.innerHTML = renderFestivalCalendarHTML();
         }
 
-        function planPresetFestival(calKey, idx) {
-            const fest = festivalCalendars[calKey]?.[idx];
+        function switchFestivalSubFilter(subKey) {
+            activeFestivalSubFilter[activeFestivalCalendar] = subKey;
+            festivalSearchQuery = '';
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalCalendarHTML();
+        }
+
+        function filterFestivalList(val) {
+            festivalSearchQuery = val;
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) {
+                msgBox.innerHTML = renderFestivalCalendarHTML();
+                const input = document.getElementById('customFestivalInput');
+                if (input) {
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }
+            }
+        }
+
+        function planDisplayedFestival(idx) {
+            const fest = currentDisplayedFestivals[idx];
             if (!fest) return;
             closeModal();
             generateFestivalAITrip(fest.name, fest.dest);
+        }
+
+        async function fetchMoreLanguageFestivals() {
+            const subKey = activeFestivalSubFilter[activeFestivalCalendar] || 'all';
+            const optObj = (festivalSubFilters[activeFestivalCalendar] || []).find(o => o.key === subKey);
+            const scopeLabel = optObj ? optObj.label : activeFestivalCalendar;
+            showToast(`Finding more ${scopeLabel} festivals...`, 'fa-sparkles text-neon-amber');
+            try {
+                const raw = await askGemini(`List 3 additional famous traditional festivals for "${scopeLabel}" (not already generic ones). Format each line strictly as: Festival Name | Month/Season | Best Destination | Short 10-word highlight. Plain text only.`);
+                const lines = raw.split('\n').map(l => l.replace(/^[\d.\-*•\s]+/, '').trim()).filter(l => l.includes('|')).slice(0, 3);
+                if (!lines.length) throw new Error('No extra festivals parsed. Try again.');
+                lines.forEach(line => {
+                    const parts = line.split('|').map(p => p.trim());
+                    if (parts.length >= 4) {
+                        festivalCalendars[activeFestivalCalendar].push({
+                            lang: subKey === 'all' ? (activeFestivalCalendar === 'telugu' ? 'telugu' : activeFestivalCalendar === 'indian' ? 'pan-india' : 'japanese') : subKey,
+                            langLabel: 'AI Pick',
+                            name: parts[0],
+                            window: parts[1],
+                            dest: parts[2],
+                            highlight: parts[3]
+                        });
+                    }
+                });
+                const msgBox = document.getElementById('modalMessage');
+                if (msgBox) msgBox.innerHTML = renderFestivalCalendarHTML();
+                showToast(`Added ${lines.length} more festivals!`, 'fa-calendar-plus text-neon-cyan');
+            } catch (err) {
+                showApiErrorModal(err.message);
+            }
         }
 
         function planCustomFestivalTrip() {
@@ -2283,7 +2601,6 @@
         }
 
         async function generateFestivalAITrip(festivalName, suggestedDest) {
-            // Switch to Travel Planner screen and pre-fill destination & Culture vibe
             switchTravelTab('plan');
             const destField = document.getElementById('destInput');
             if (suggestedDest) destField.value = suggestedDest;
@@ -2324,7 +2641,6 @@
                 outBox.classList.remove('hidden');
                 outBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                // Sync festival trip stops directly into Live Execution timeline
                 const times = ['FESTIVAL PICK', '09:00 AM · MORNING', '01:30 PM · FEAST', '06:30 PM · CELEBRATION'];
                 document.getElementById('liveTimeline').innerHTML = lines.map((line, i) => `
                     <div class="relative">
@@ -2401,7 +2717,7 @@
         }
         function cycleCosmicTheme() {
             currentCosmicThemeIdx = (currentCosmicThemeIdx + 1) % cosmicThemes.length;
-            localStorage.setItem('md_theme_idx', String(currentCosmicThemeIdx));
+            safeSetStorage('md_theme_idx', String(currentCosmicThemeIdx));
             applyCosmicThemeVisuals();
             showToast(`Theme synced: ${cosmicThemes[currentCosmicThemeIdx].name}`, 'fa-palette text-neon-cyan');
         }
@@ -2711,7 +3027,6 @@
                 document.getElementById('soundscapeIcon').className = 'fa-solid fa-pause text-neon-cyan text-xs mr-2';
                 document.getElementById('soundscapeLabel').innerText = 'Playing Ambient...';
                 document.querySelectorAll('.sound-bar').forEach(b => b.classList.remove('paused'));
-                // Gentle Web Audio ambient tone
                 try {
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;
                     soundscapeAudioCtx = new AudioCtx();
@@ -2768,7 +3083,6 @@
             let width = 0, height = 0, t = 0;
             const pointer = { x: 0.5, y: 0.5 };
 
-            // Star particles for Memory Vault mode
             const stars = Array.from({ length: 42 }, () => ({
                 x: Math.random(),
                 y: Math.random(),
@@ -2790,41 +3104,8 @@
                 pointer.y = e.clientY / Math.max(window.innerHeight, 1);
             });
 
-            function drawTravelGraphics() {
-                ctx.clearRect(0, 0, width, height);
-                // Same twinkling cosmic starfield + subtle neon expedition horizon waves
-                stars.forEach((s) => {
-                    s.y -= s.speed;
-                    if (s.y < -0.05) { s.y = 1.05; s.x = Math.random(); }
-                    const px = (s.x + (pointer.x - 0.5) * 0.03) * width;
-                    const py = (s.y + (pointer.y - 0.5) * 0.03) * height;
-                    const alpha = 0.22 + 0.55 * Math.abs(Math.sin(t * 0.025 + s.phase));
-                    ctx.beginPath();
-                    ctx.arc(px, py, s.r, 0, Math.PI * 2);
-                    ctx.fillStyle = s.hue;
-                    ctx.globalAlpha = alpha;
-                    ctx.fill();
-                });
-                ctx.globalAlpha = 1;
-                ctx.lineWidth = 1;
-                for (let i = 0; i < 4; i++) {
-                    ctx.beginPath();
-                    const baseY = height * (0.24 + i * 0.18);
-                    ctx.strokeStyle = i % 2 === 0 ? 'rgba(0, 245, 255, 0.07)' : 'rgba(255, 46, 147, 0.06)';
-                    for (let x = 0; x <= width; x += 14) {
-                        const wave = Math.sin(x * 0.012 + t * 0.014 + i) * 14 + Math.cos(x * 0.006 - t * 0.01) * 8;
-                        const parallax = (pointer.y - 0.5) * (i + 1) * 4;
-                        const y = baseY + wave + parallax;
-                        if (x === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
-                    }
-                    ctx.stroke();
-                }
-            }
-
             function drawMemoryGraphics() {
                 ctx.clearRect(0, 0, width, height);
-                // Twinkling constellation particles with gentle parallax
                 stars.forEach((s) => {
                     s.y -= s.speed;
                     if (s.y < -0.05) { s.y = 1.05; s.x = Math.random(); }
