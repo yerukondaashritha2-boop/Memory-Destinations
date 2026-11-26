@@ -1,0 +1,2629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Destinations — Unified Travel Planner & Memory Vault</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Syne, Space Grotesk, Outfit & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Syne', 'sans-serif'],
+                        cosmic: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        brand: {
+                            ocean: '#0F4C81',
+                            sky: '#06B6D4',
+                            mango: '#F97316',
+                            rose: '#F43F5E',
+                            leaf: '#10B981'
+                        },
+                        cosmic: {
+                            900: '#060711',
+                            800: '#0E1022',
+                            700: '#181B36'
+                        },
+                        neon: {
+                            cyan: '#00F5FF',
+                            pink: '#FF2E93',
+                            amber: '#FFD166'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* ==================== BASE & SCROLLBAR ==================== */
+        * { -webkit-tap-highlight-color: transparent; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background 0.7s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s ease;
+            overflow-x: hidden;
+        }
+
+        /* ==================== UNIFIED COSMIC WALLPAPER THEME (TRAVEL & MEMORY) ==================== */
+        body.mode-travel,
+        body.mode-memory {
+            background-color: #04050C;
+            color: #FFFFFF;
+            background-image: radial-gradient(circle at 50% 0%, #1B1638 0%, #05060F 100%);
+        }
+        body.mode-travel::before,
+        body.mode-memory::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 80% 90%, rgba(255, 46, 147, 0.14), transparent 45%), rgba(4, 5, 12, 0.45);
+            backdrop-filter: blur(6px);
+            z-index: 0;
+        }
+        body.mode-travel .app-container,
+        body.mode-memory .app-container {
+            background: linear-gradient(180deg, rgba(9, 11, 24, 0.94) 0%, rgba(5, 6, 15, 0.97) 100%);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
+            border: 2px solid rgba(0, 245, 255, 0.22);
+            box-shadow: 0 0 80px rgba(0, 245, 255, 0.14), 0 30px 65px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+        body.mode-travel .ambient-glow,
+        body.mode-memory .ambient-glow {
+            opacity: 0.48;
+            pointer-events: none;
+        }
+
+        /* ==================== APP SHELL & LIVE GRAPHICS CANVAS ==================== */
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 880px;
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+            transition: background 0.55s ease, border-color 0.55s ease, box-shadow 0.55s ease;
+        }
+        @media (min-width: 450px) {
+            .app-container {
+                height: 870px;
+                border-radius: 2.8rem;
+            }
+        }
+
+        #bgGraphicsCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.85;
+        }
+
+        /* Cosmic Ambient Orbs */
+        .ambient-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(85px);
+            z-index: 0;
+            transition: opacity 0.6s ease, background 0.6s ease;
+            animation: floatGlow 11s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        .glow-1 { top: -12%; left: -18%; width: 310px; height: 310px; background: #FF2E93; }
+        .glow-2 { bottom: 6%; right: -18%; width: 270px; height: 270px; background: #00F5FF; }
+        @keyframes floatGlow {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(24px, 32px) scale(1.12); }
+        }
+
+        /* ==================== PREMIUM GRAPHIC SURFACES ==================== */
+        .glass-light {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 100%);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+
+        .glass-dark {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 100%);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+
+        /* Boarding Pass Ticket Card with Real Cutout Notches */
+        .ticket-card {
+            position: relative;
+            background: linear-gradient(135deg, #FF6B4A 0%, #F43F5E 52%, #C026D3 100%);
+            box-shadow: 0 18px 34px -10px rgba(244, 63, 94, 0.48);
+        }
+        .ticket-card::before, .ticket-card::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            background: #070916;
+            z-index: 20;
+        }
+        .ticket-card::before { left: -9px; }
+        .ticket-card::after { right: -9px; }
+
+        /* Tactile 3D Button & Shimmer Sweep */
+        .tactile-btn {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.18s ease, box-shadow 0.25s ease;
+        }
+        .tactile-btn:active { transform: translateY(2px) scale(0.985); }
+        .tactile-btn::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 65%;
+            height: 100%;
+            background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.28) 50%, transparent 80%);
+            transition: left 0.65s ease;
+        }
+        .tactile-btn:hover::after { left: 135%; }
+
+        /* Holographic Animated Border Card (Memory Mode) */
+        .holo-card {
+            position: relative;
+            background: linear-gradient(155deg, rgba(20, 24, 48, 0.85), rgba(10, 12, 26, 0.92));
+            border: 1px solid rgba(0, 245, 255, 0.28);
+            box-shadow: 0 16px 36px -12px rgba(0, 245, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .holo-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 46, 147, 0.55);
+            box-shadow: 0 20px 42px -12px rgba(255, 46, 147, 0.28);
+        }
+
+        /* Polaroid / Film Frame Card */
+        .film-frame {
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.7);
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+        }
+        .film-frame:hover {
+            transform: translateY(-4px) scale(1.015);
+            box-shadow: 0 22px 42px -12px rgba(0, 245, 255, 0.26);
+        }
+
+        /* Animated Radar Scanner Graphic */
+        .radar-ring {
+            position: relative;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,245,255,0.2) 0%, rgba(0,245,255,0.03) 70%);
+            border: 1.5px solid rgba(0, 245, 255, 0.35);
+            overflow: hidden;
+        }
+        .radar-sweep {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(0, 245, 255, 0.72) 0deg, rgba(0, 245, 255, 0) 85deg, transparent 360deg);
+            animation: spin 2.8s linear infinite;
+        }
+
+        /* ==================== SCREENS ==================== */
+        .screen {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            padding-top: 82px;
+            padding-bottom: 126px;
+            position: relative;
+            z-index: 10;
+            animation: screenIn 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .screen.active { display: block; }
+        @keyframes screenIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ==================== LIQUID SLIDING TOP MODE SWITCHER ==================== */
+        .top-switcher-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+            padding: 14px 18px 10px;
+        }
+        .mode-pill {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 4px;
+            border-radius: 9999px;
+            transition: all 0.4s ease;
+        }
+        body.mode-travel .mode-pill,
+        body.mode-memory .mode-pill {
+            background: rgba(14, 16, 34, 0.88);
+            border: 1px solid rgba(0, 245, 255, 0.25);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
+        }
+        .mode-slider {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            border-radius: 9999px;
+            transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1), background 0.4s ease, box-shadow 0.4s ease;
+            z-index: 0;
+        }
+        body.mode-travel .mode-slider {
+            transform: translateX(0%);
+            background: linear-gradient(135deg, #00F5FF 0%, #2563EB 100%);
+            box-shadow: 0 6px 18px rgba(0, 245, 255, 0.38);
+        }
+        body.mode-memory .mode-slider {
+            transform: translateX(100%);
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 100%);
+            box-shadow: 0 6px 18px rgba(255, 46, 147, 0.45);
+        }
+        .mode-btn {
+            position: relative;
+            z-index: 1;
+            padding: 8px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+        body.mode-travel .mode-btn.active-travel { color: #05060F; }
+        body.mode-travel .mode-btn:not(.active-travel) { color: rgba(255, 255, 255, 0.55); }
+        body.mode-memory .mode-btn.active-memory { color: #FFFFFF; }
+        body.mode-memory .mode-btn:not(.active-memory) { color: rgba(255, 255, 255, 0.55); }
+
+        /* ==================== ENHANCED FLOATING BOTTOM DOCKS ==================== */
+        .nav-dock-light,
+        .nav-dock-dark {
+            background: rgba(12, 14, 30, 0.88);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(0, 245, 255, 0.22);
+            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.75), 0 0 24px rgba(0, 245, 255, 0.12);
+        }
+
+        .travel-nav-item {
+            color: rgba(255, 255, 255, 0.44);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 16px;
+            padding: 6px 10px;
+        }
+        .travel-nav-item.active {
+            color: #00F5FF;
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.16), rgba(37, 99, 235, 0.22));
+            transform: translateY(-2px);
+        }
+        .travel-nav-item.active .glow-dot { opacity: 1; transform: scale(1); }
+
+        .memory-nav-item {
+            color: rgba(255, 255, 255, 0.42);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .memory-nav-item.active {
+            color: #00F5FF;
+            transform: translateY(-3px);
+        }
+        .memory-nav-item.active .glow-dot-cyan { opacity: 1; transform: scale(1); }
+
+        .glow-dot { opacity: 0; transform: scale(0); width: 14px; height: 3px; border-radius: 99px; background: #06B6D4; box-shadow: 0 0 10px #06B6D4; transition: 0.3s; }
+        .glow-dot-cyan { opacity: 0; transform: scale(0); width: 14px; height: 3px; border-radius: 99px; background: #00F5FF; box-shadow: 0 0 12px #00F5FF; transition: 0.3s; }
+
+        /* ==================== INTERACTIVE CONTROLS ==================== */
+        .dashed-control-light {
+            border: 1.5px dashed rgba(0, 245, 255, 0.45);
+            background: rgba(0, 245, 255, 0.06);
+            color: #00F5FF;
+        }
+        .dashed-control-light:hover { background: rgba(0, 245, 255, 0.14); border-style: solid; }
+
+        .neon-input:focus {
+            outline: none;
+            border-color: #FF2E93;
+            box-shadow: 0 0 18px rgba(255, 46, 147, 0.32);
+        }
+
+        .bento-card { transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.32s ease; }
+        .bento-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px -10px rgba(0, 245, 255, 0.25); }
+
+        /* Loaders */
+        .loader {
+            border: 2px solid rgba(255, 255, 255, 0.16);
+            border-top: 2px solid #00F5FF;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.9s linear infinite;
+            display: inline-block;
+        }
+        .loader-dark {
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-top: 2px solid #00F5FF;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 0.9s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ==================== ADAPTIVE MODAL ==================== */
+        .modal-overlay {
+            background: rgba(4, 7, 18, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 220;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box {
+            transform: scale(0.92) translateY(16px);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            max-height: 82vh;
+            overflow-y: auto;
+        }
+        .modal-overlay.active .modal-box { transform: scale(1) translateY(0); }
+
+        body.mode-travel .modal-box,
+        body.mode-memory .modal-box {
+            background: rgba(12, 14, 28, 0.97);
+            color: #FFFFFF;
+            border: 1px solid rgba(0, 245, 255, 0.25);
+        }
+
+        /* Slideshow & 3D Globe */
+        .slideshow-img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            object-fit: cover; opacity: 0; animation: fadeSlide 9s infinite; border-radius: 1rem;
+        }
+        .slideshow-img.paused { animation-play-state: paused; }
+        .slideshow-img:nth-child(1) { animation-delay: 0s; }
+        .slideshow-img:nth-child(2) { animation-delay: 3s; }
+        .slideshow-img:nth-child(3) { animation-delay: 6s; }
+        @keyframes fadeSlide {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            10%, 33% { opacity: 1; transform: scale(1.06); }
+            43% { opacity: 0; transform: scale(1.1); }
+        }
+
+        .globe-wrapper {
+            width: 170px; height: 170px; border-radius: 50%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/600px-Blue_Marble_2002.png');
+            background-size: 340px 170px;
+            box-shadow: inset -24px -24px 44px rgba(0,0,0,0.6), 0 0 38px rgba(0,245,255,0.34);
+            animation: spinGlobe 12s linear infinite;
+            margin: 0 auto; position: relative;
+        }
+        @keyframes spinGlobe { from { background-position: 0 0; } to { background-position: 340px 0; } }
+        .globe-pin {
+            position: absolute; width: 14px; height: 14px; background: #FF2E93;
+            border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 0 14px #FF2E93; cursor: pointer; transition: transform 0.2s;
+        }
+        .globe-pin:hover { transform: scale(1.45); }
+
+        /* Toast Banner */
+        #toastBanner {
+            position: absolute; top: 70px; left: 50%; transform: translate(-50%, -120px);
+            z-index: 300; transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        #toastBanner.show { transform: translate(-50%, 0); }
+
+        .sound-bar.paused { animation-play-state: paused !important; height: 6px !important; }
+    </style>
+</head>
+<body class="mode-travel">
+
+    <div class="app-container">
+
+        <!-- Interactive Live Background Graphics Canvas (Topography in Travel / Starfield in Vault) -->
+        <canvas id="bgGraphicsCanvas"></canvas>
+
+        <!-- Cosmic Orbs (Visible in Memory Mode) -->
+        <div class="ambient-glow glow-1"></div>
+        <div class="ambient-glow glow-2"></div>
+
+        <!-- Live Floating Toast Notification -->
+        <div id="toastBanner" class="bg-slate-950/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-2xl border border-white/20 flex items-center gap-2 whitespace-nowrap">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-brand-sky"></i>
+            <span id="toastText">Ready</span>
+        </div>
+
+        <!-- ================= UNIFIED LIQUID SLIDING TOP SWITCHER ================= -->
+        <div class="top-switcher-bar">
+            <div class="flex items-center gap-2">
+                <div class="mode-pill flex-1">
+                    <div id="modeSlider" class="mode-slider"></div>
+                    <button id="btnModeTravel" class="mode-btn active-travel" onclick="switchAppMode('travel')">
+                        <i class="fa-solid fa-compass"></i>
+                        <span>Travel Studio</span>
+                    </button>
+                    <button id="btnModeMemory" class="mode-btn" onclick="switchAppMode('memory')">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span>Memory Vault</span>
+                    </button>
+                </div>
+                <!-- Global API Keys & Connection Diagnostics -->
+                <button title="API Keys & Live Diagnostics" onclick="openApiSettings()" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition hover:scale-110 shadow-md border border-neon-cyan/30" id="globalKeyBtn" style="background: rgba(14,16,34,0.9); color: #00F5FF;">
+                    <i class="fa-solid fa-key text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             PART A: DYNAMIC TRAVEL PLANNER (UNIFIED COSMIC THEME - 4 SCREENS)
+             ========================================================================= -->
+
+        <!-- SCREEN T1: PLANNER DASHBOARD -->
+        <main id="screen-plan" class="screen active hide-scroll px-5">
+            <!-- Cosmic Travel Masthead -->
+            <div class="flex justify-between items-center mb-5 mt-1">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-neon-cyan/10 border border-neon-cyan/25 mb-1">
+                        <span id="aiStatusDot" class="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-pulse"></span>
+                        <p id="aiStatusLabel" class="font-mono text-[9px] text-neon-cyan font-bold tracking-widest uppercase">AI Trip Commander</p>
+                    </div>
+                    <h1 class="font-cosmic text-3xl font-bold text-white tracking-tight leading-none">Wander<span class="bg-clip-text text-transparent bg-gradient-to-r from-neon-cyan to-neon-pink">Sync</span></h1>
+                </div>
+                <div class="flex gap-2">
+                    <button title="Wallpaper & Cosmic Themes" class="glass-dark w-10 h-10 rounded-2xl flex items-center justify-center text-neon-cyan hover:scale-105 hover:bg-white/10 transition" onclick="openUnifiedThemeSelector()">
+                        <i class="fa-solid fa-palette text-sm"></i>
+                    </button>
+                    <button title="Take Me Back Slideshow" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-neon-pink to-purple-600 text-white flex items-center justify-center shadow-lg shadow-neon-pink/35 hover:scale-105 transition" onclick="playTakeMeBack()">
+                        <i class="fa-solid fa-film text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Boarding-Pass Style Surprise Me Roulette Card -->
+            <div class="ticket-card rounded-3xl p-5 mb-5 text-white cursor-pointer group tactile-btn" onclick="surpriseDestination()">
+                <!-- Subtle SVG Compass Watermark -->
+                <svg class="absolute -right-6 -bottom-6 w-32 h-32 text-white/15 group-hover:rotate-45 transition duration-700 pointer-events-none" viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
+                    <circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1.5"/>
+                    <polygon points="50,12 57,44 50,50 43,44" fill="currentColor"/>
+                    <polygon points="50,88 57,56 50,50 43,56" fill="currentColor" opacity="0.45"/>
+                </svg>
+                <div class="relative z-10 flex justify-between items-center">
+                    <div>
+                        <span class="font-mono text-[9px] uppercase tracking-[0.2em] bg-white/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm">FLIGHT · AI ROULETTE</span>
+                        <h2 class="font-display text-2xl font-extrabold mt-2 tracking-tight">Surprise Me!</h2>
+                        <p class="text-xs text-white/90 mt-0.5 font-medium">Spin for a spontaneous dream escape</p>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:rotate-180 transition duration-500 shadow-inner shrink-0">
+                        <i class="fa-solid fa-dice text-2xl"></i>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-3.5 pt-2.5 border-t border-dashed border-white/35 flex justify-between items-center font-mono text-[10px] text-white/85">
+                    <span><i class="fa-solid fa-plane-departure mr-1.5"></i>ANYWHERE</span>
+                    <span>TAP TO SPIN <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                </div>
+            </div>
+
+            <!-- Tactile Input Deck (Cosmic Dark Glass) -->
+            <div class="holo-card rounded-3xl p-4 mb-4 space-y-3">
+                <div class="relative group">
+                    <div class="w-9 h-9 rounded-xl bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/25 flex items-center justify-center absolute left-2.5 top-2.5 transition group-focus-within:bg-neon-cyan group-focus-within:text-cosmic-900">
+                        <i class="fa-solid fa-location-dot text-sm"></i>
+                    </div>
+                    <input type="text" id="destInput" placeholder="Where to? (Bali, Kyoto, Goa...)" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl py-3.5 pl-14 pr-4 text-sm text-white placeholder-gray-500 font-semibold transition">
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="relative">
+                        <i class="fa-solid fa-wallet absolute left-3.5 top-3.5 text-neon-amber text-xs"></i>
+                        <select id="budgetInput" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl py-3 pl-9 pr-3 text-xs text-gray-200 font-bold appearance-none cursor-pointer">
+                            <option value="Low" class="bg-cosmic-800">Low Budget</option>
+                            <option value="Medium" class="bg-cosmic-800" selected>Medium Budget</option>
+                            <option value="High" class="bg-cosmic-800">Luxury Tier</option>
+                        </select>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-wand-sparkles absolute left-3.5 top-3.5 text-neon-pink text-xs"></i>
+                        <select id="vibeInput" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl py-3 pl-9 pr-3 text-xs text-gray-200 font-bold appearance-none cursor-pointer">
+                            <option value="Adventure" class="bg-cosmic-800">Adventure</option>
+                            <option value="Relaxing" class="bg-cosmic-800">Relaxing</option>
+                            <option value="Culture" class="bg-cosmic-800">Culture</option>
+                            <option value="Romantic" class="bg-cosmic-800">Romantic</option>
+                            <option value="Foodie" class="bg-cosmic-800">Foodie</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Primary Tactile Generate Button -->
+            <button id="generateTripBtn" class="tactile-btn w-full bg-gradient-to-r from-neon-cyan to-blue-600 text-cosmic-900 font-cosmic font-bold py-4 rounded-2xl mb-3 shadow-lg shadow-neon-cyan/25 flex items-center justify-center text-base" onclick="generateAITrip()">
+                <i class="fa-solid fa-microchip mr-2"></i> Generate AI Itinerary
+            </button>
+
+            <!-- Custom Control -->
+            <button class="tactile-btn w-full dashed-control-light font-bold py-3.5 rounded-2xl transition flex items-center justify-center text-xs" onclick="openCustomBuilder()">
+                <i class="fa-solid fa-sliders mr-2"></i> [Custom Control] Build Custom Itinerary
+            </button>
+
+            <!-- AI Output Box with BRIDGE TO MEMORY VAULT -->
+            <div id="aiOutputBox" class="mt-5 holo-card rounded-3xl p-5 hidden">
+                <div class="flex justify-between items-center mb-3 gap-2">
+                    <div>
+                        <h3 class="font-cosmic font-bold text-neon-cyan text-base"><i class="fa-solid fa-sparkles mr-1 text-neon-amber"></i> Trip Blueprint</h3>
+                        <p id="activeModelTag" class="font-mono text-[9px] font-bold text-gray-400 uppercase"></p>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button id="saveDbBtn" class="tactile-btn text-[11px] bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40 px-3 py-1.5 rounded-xl font-bold" onclick="saveTripToSheetDB()">
+                            <i class="fa-solid fa-database mr-1"></i> Save DB
+                        </button>
+                        <button title="Push this trip directly to Memory Notebook" class="tactile-btn text-[11px] bg-gradient-to-r from-neon-pink to-violet-600 text-white px-3 py-1.5 rounded-xl font-bold shadow-sm" onclick="archiveTripToVault()">
+                            <i class="fa-solid fa-vault mr-1"></i> To Vault
+                        </button>
+                    </div>
+                </div>
+                <div id="itineraryContent" class="text-sm text-gray-200 font-medium space-y-3.5 relative border-l-2 border-neon-cyan/35 ml-2 pl-4"></div>
+            </div>
+        </main>
+
+        <!-- SCREEN T2: LIVE EXECUTION -->
+        <main id="screen-active" class="screen hide-scroll px-5">
+            <div class="flex justify-between items-center mb-4 mt-1">
+                <div>
+                    <span class="font-mono text-[9px] uppercase tracking-widest text-neon-cyan font-bold">MISSION CONTROL</span>
+                    <h1 class="font-cosmic text-3xl font-bold text-white leading-tight">Live Execution</h1>
+                </div>
+                <button class="tactile-btn text-xs bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/35 font-bold px-3.5 py-2 rounded-2xl shadow-md" onclick="openCustomBuilder()">
+                    <i class="fa-solid fa-plus mr-1"></i> Add Stop
+                </button>
+            </div>
+
+            <!-- Holographic Budget Estimator Graphic -->
+            <div class="holo-card rounded-[1.75rem] p-5 mb-5 relative overflow-hidden text-white">
+                <div class="absolute -right-8 -top-8 w-36 h-36 bg-neon-pink/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex justify-between items-center mb-1 relative z-10">
+                    <p class="font-mono text-[10px] text-neon-cyan font-bold uppercase tracking-widest">Live Budget Meter</p>
+                    <button class="text-[10px] font-bold bg-white/10 hover:bg-white/20 backdrop-blur px-3 py-1 rounded-full border border-white/15 transition" onclick="openAddExpense()">+ Log Expense</button>
+                </div>
+                <div class="flex items-end gap-2 mb-3.5 relative z-10">
+                    <h2 class="font-cosmic text-4xl font-bold tracking-tight" id="spentBudget">$1,250</h2>
+                    <span class="font-mono text-xs text-gray-400 mb-1.5">/ $1,500</span>
+                </div>
+                <div class="w-full bg-white/10 rounded-full h-3 mb-4 p-0.5 overflow-hidden relative z-10">
+                    <div id="budgetBar" class="bg-gradient-to-r from-neon-cyan via-neon-amber to-neon-pink h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(255,46,147,0.7)]" style="width: 83%"></div>
+                </div>
+                <div class="bg-black/40 backdrop-blur-md rounded-2xl p-2.5 flex justify-between items-center border border-white/10 relative z-10">
+                    <p class="text-[10px] font-semibold text-gray-300">[Feedback] Food budget accurate?</p>
+                    <div class="flex gap-1.5">
+                        <button class="text-[11px] bg-emerald-500/25 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500 hover:text-white font-bold px-3 py-1 rounded-xl transition" onclick="adjustBudget(true)">Yes</button>
+                        <button class="text-[11px] bg-rose-500/25 text-rose-300 border border-rose-400/30 hover:bg-rose-500 hover:text-white font-bold px-3 py-1 rounded-xl transition" onclick="adjustBudget(false)">No</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reschedule Now -->
+            <button class="tactile-btn w-full glass-dark border border-neon-pink/40 text-neon-pink font-bold py-3.5 rounded-2xl mb-6 flex items-center justify-center text-sm hover:bg-neon-pink/10 transition" onclick="rescheduleTrip()">
+                <i class="fa-solid fa-arrows-rotate mr-2"></i> Reschedule Now (AI Auto-Adapt)
+            </button>
+
+            <!-- Live Timeline -->
+            <div id="liveTimeline" class="relative pl-4 border-l-2 border-dashed border-neon-cyan/30 space-y-5">
+                <div class="relative">
+                    <div class="absolute -left-[22px] w-3.5 h-3.5 bg-gray-500 rounded-full border-2 border-cosmic-900"></div>
+                    <p class="font-mono text-[10px] font-bold text-gray-400">09:00 AM · COMPLETED</p>
+                    <div class="glass-dark p-4 rounded-2xl mt-1 opacity-75">
+                        <h4 class="font-bold text-gray-200 text-sm">Airport Arrival & Hotel Check-in</h4>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="absolute -left-[23px] w-4 h-4 bg-neon-cyan rounded-full border-[3px] border-cosmic-900 shadow-[0_0_12px_rgba(0,245,255,0.8)] animate-pulse"></div>
+                    <p class="font-mono text-[10px] text-neon-cyan font-bold bg-neon-cyan/15 inline-block px-2.5 py-0.5 rounded-full">12:30 PM · LIVE NOW</p>
+                    <div class="holo-card p-4 rounded-2xl mt-2 border-l-4 border-l-neon-cyan">
+                        <h4 class="font-bold text-white text-base">Local Seafood Lunch</h4>
+                        <p class="text-xs text-gray-400 font-medium mt-1"><i class="fa-solid fa-utensils mr-1.5 text-neon-amber"></i> Ocean View Restaurant · Est: $40</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- SCREEN T3: GAMIFICATION & CHALLENGE HUB -->
+        <main id="screen-game" class="screen hide-scroll px-5">
+            <span class="font-mono text-[9px] uppercase tracking-widest text-neon-pink font-bold">ARENA MODE</span>
+            <h1 class="font-cosmic text-3xl font-bold text-white mb-4 leading-tight">Challenge Hub</h1>
+
+            <!-- Esports / Arcade VS Battle Card -->
+            <div class="holo-card rounded-[1.75rem] p-5 mb-5 relative overflow-hidden text-white">
+                <div class="absolute inset-0 bg-gradient-to-tr from-neon-cyan/10 via-transparent to-neon-pink/15 pointer-events-none"></div>
+                <div class="flex justify-between items-center mb-4 mt-1 relative z-10">
+                    <div class="text-center">
+                        <div class="w-14 h-14 rounded-2xl border-2 border-neon-cyan shadow-[0_0_18px_rgba(0,245,255,0.45)] mx-auto overflow-hidden">
+                            <img src="https://placehold.co/100x100/0E1022/00F5FF?text=You" alt="You" class="w-full h-full object-cover">
+                        </div>
+                        <p class="text-xs font-bold mt-2 text-neon-cyan">You · <span id="myScore" class="text-white text-sm">2</span></p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-neon-amber to-neon-pink flex items-center justify-center font-display text-lg font-extrabold italic shadow-lg rotate-6 text-white">VS</div>
+                    <div class="text-center">
+                        <div class="w-14 h-14 rounded-2xl border-2 border-neon-pink shadow-[0_0_18px_rgba(255,46,147,0.45)] mx-auto overflow-hidden">
+                            <img src="https://placehold.co/100x100/0E1022/FF2E93?text=P" alt="Partner" class="w-full h-full object-cover">
+                        </div>
+                        <p class="text-xs font-bold mt-2 text-neon-pink">Partner · <span id="partnerScore" class="text-white text-sm">1</span></p>
+                    </div>
+                </div>
+                <div class="bg-black/40 backdrop-blur-md rounded-2xl p-3.5 text-center border border-white/10 relative z-10">
+                    <p class="text-xs text-gray-300 font-medium">ACTIVE BET: <span class="text-white font-bold" id="activeBetText">Navigate city without GPS</span></p>
+                    <p class="text-[11px] text-neon-amber font-bold mt-1.5 bg-neon-amber/15 inline-block px-3 py-1 rounded-full border border-neon-amber/25">
+                        <i class="fa-solid fa-gift mr-1"></i> Reward: <span id="activeRewardText">Loser buys dinner!</span>
+                    </p>
+                    <div class="mt-3">
+                        <button class="tactile-btn text-xs bg-gradient-to-r from-neon-cyan to-emerald-400 text-cosmic-900 font-bold px-5 py-2 rounded-xl shadow-lg" onclick="claimBetWin()">
+                            <i class="fa-solid fa-trophy mr-1"></i> Claim Win (+1 pt)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="tactile-btn w-full dashed-control-light font-bold py-3.5 rounded-2xl mb-6 transition flex items-center justify-center text-xs" onclick="openCustomBet()">
+                <i class="fa-solid fa-pen-to-square mr-2"></i> [Custom Control] Create Challenge/Bet
+            </button>
+
+            <!-- Bucket List + 3D Globe + AI Gen -->
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-cosmic text-xl font-bold text-white">Bucket List</h3>
+                <div class="flex gap-2">
+                    <button class="tactile-btn text-[10px] font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/35 px-3 py-1.5 rounded-xl flex items-center" onclick="showGlobe()">
+                        <i class="fa-solid fa-earth-americas mr-1"></i> 3D Globe
+                    </button>
+                    <button class="tactile-btn text-[10px] font-bold bg-gradient-to-r from-neon-pink to-purple-600 text-white px-3 py-1.5 rounded-xl flex items-center shadow-sm" onclick="generateBucketList()">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Gen
+                    </button>
+                </div>
+            </div>
+
+            <input type="file" id="proofUpload" class="hidden" accept="image/*" onchange="uploadBucketListProof(this)">
+
+            <div class="space-y-3" id="bucketListContainer">
+                <div class="glass-dark p-4 rounded-2xl flex items-center justify-between opacity-70">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-300 border border-emerald-400/35 flex items-center justify-center mr-3"><i class="fa-solid fa-check text-xs"></i></div>
+                        <span class="text-sm font-bold line-through text-gray-400">1st Trip Together</span>
+                    </div>
+                    <i class="fa-solid fa-medal text-neon-amber text-xl"></i>
+                </div>
+                <div id="bucket-item-1" class="holo-card p-4 rounded-2xl flex items-center justify-between cursor-pointer transition" onclick="triggerBucketProof('bucket-item-1')">
+                    <div class="flex items-center flex-1 pr-2">
+                        <div class="bucket-check w-8 h-8 rounded-xl border-2 border-white/25 bg-white/5 flex items-center justify-center mr-3 shrink-0"></div>
+                        <div>
+                            <span class="bucket-label text-sm font-bold text-white block">Try Exotic Street Food</span>
+                            <span class="text-[10px] text-neon-cyan font-medium">Tap to snap proof → Auto-saves to Vault</span>
+                        </div>
+                    </div>
+                    <div class="bucket-icon w-10 h-10 rounded-xl bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 flex justify-center items-center shrink-0 overflow-hidden">
+                        <i class="fa-solid fa-camera text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- SCREEN T4: GROUP & SAFETY UTILITIES -->
+        <main id="screen-util" class="screen hide-scroll px-5">
+            <span class="font-mono text-[9px] uppercase tracking-widest text-neon-cyan font-bold">SQUAD TOOLKIT</span>
+            <h1 class="font-cosmic text-3xl font-bold text-white mb-5 leading-tight">Group & Safety</h1>
+
+            <!-- Live Animated Radar Graphic Card -->
+            <div class="holo-card rounded-[1.75rem] p-5 mb-4 relative overflow-hidden cursor-pointer group" onclick="findMeetupPoint()">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="radar-ring shrink-0 flex items-center justify-center">
+                        <div class="radar-sweep"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-neon-cyan relative z-10 shadow-[0_0_8px_#00F5FF]"></div>
+                        <div class="w-2 h-2 rounded-full bg-neon-pink absolute top-3 right-3 animate-ping"></div>
+                        <div class="w-2 h-2 rounded-full bg-neon-amber absolute bottom-3 left-3"></div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-cosmic font-bold text-base text-white">Group Radar</h3>
+                        <p class="text-xs text-gray-400 font-medium">Pin live GPS & triangulate center meetup</p>
+                        <div class="flex -space-x-2 mt-2">
+                            <img src="https://placehold.co/100/0E1022/00F5FF?text=Y" alt="Y" class="w-6 h-6 rounded-full border border-neon-cyan">
+                            <img src="https://placehold.co/100/0E1022/FF2E93?text=A" alt="A" class="w-6 h-6 rounded-full border border-neon-pink">
+                            <div class="w-6 h-6 rounded-full bg-white/15 border border-white/30 flex items-center justify-center text-[9px] font-bold text-white">+2</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="tactile-btn w-full bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40 hover:bg-neon-cyan hover:text-cosmic-900 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center transition">
+                    <i class="fa-solid fa-location-crosshairs mr-2"></i> Find Optimal Meetup Spot
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5 mb-4">
+                <div class="holo-card rounded-3xl p-4 cursor-pointer" onclick="openSplitBill()">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white flex items-center justify-center mb-3 shadow-md shadow-emerald-500/25">
+                        <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+                    </div>
+                    <h3 class="font-bold text-sm text-white">Split Bill</h3>
+                    <p class="text-[11px] text-gray-400 font-medium">Live Calculator</p>
+                </div>
+                <div class="holo-card rounded-3xl p-4 cursor-pointer" onclick="openLivePoll()">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-neon-amber to-orange-500 text-cosmic-900 flex items-center justify-center mb-3 shadow-md shadow-amber-500/25">
+                        <i class="fa-solid fa-check-to-slot text-lg"></i>
+                    </div>
+                    <h3 class="font-bold text-sm text-white">Live Poll</h3>
+                    <p id="pollSummary" class="text-[11px] text-gray-400 font-medium">5 votes cast</p>
+                </div>
+            </div>
+
+            <!-- Smart Safety & SOS -->
+            <button class="tactile-btn w-full mb-4 bg-gradient-to-r from-neon-pink to-rose-600 text-white font-cosmic font-bold py-4 rounded-2xl flex items-center justify-center shadow-lg shadow-neon-pink/35 text-base" onclick="triggerSOS()">
+                <i class="fa-solid fa-shield-heart text-xl mr-2.5 animate-pulse"></i> Smart Safety & SOS Alert
+            </button>
+
+            <!-- Local Cultural Connect -->
+            <div class="holo-card rounded-3xl p-4 mb-3.5 border-l-4 border-l-neon-amber cursor-pointer" onclick="fetchCulturalEvents()">
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-masks-theater text-neon-amber mr-2"></i>Cultural Connect</h3>
+                    <span class="font-mono text-[9px] font-bold bg-neon-amber/15 text-neon-amber px-2.5 py-0.5 rounded-full">AI LIVE</span>
+                </div>
+                <p class="text-[11px] text-gray-400 font-medium">Discover local festivals, fairs & night markets on your dates.</p>
+            </div>
+
+            <!-- AI Packing Guide -->
+            <div class="holo-card rounded-3xl p-4 mb-3.5 flex justify-between items-center cursor-pointer" onclick="fetchPackingList()">
+                <div class="flex items-center">
+                    <div class="w-11 h-11 rounded-2xl bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/25 flex items-center justify-center mr-3.5"><i class="fa-solid fa-suitcase-rolling text-base"></i></div>
+                    <div>
+                        <h3 class="font-bold text-sm text-white">AI Packing Guide</h3>
+                        <p class="text-[11px] text-gray-400 font-medium">Climate-synced checklist</p>
+                    </div>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-neon-cyan"><i class="fa-solid fa-chevron-right text-xs"></i></div>
+            </div>
+
+            <!-- Local Lingo Guide -->
+            <div class="holo-card rounded-3xl p-4 mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-language text-neon-cyan mr-2"></i>Local Lingo Guide</h3>
+                    <button class="tactile-btn text-[10px] font-bold bg-neon-cyan text-cosmic-900 px-3 py-1 rounded-full" onclick="fetchLocalLingo()">
+                        <i class="fa-solid fa-sparkles mr-1"></i> Generate
+                    </button>
+                </div>
+                <div id="lingoContainer" class="space-y-2">
+                    <div class="bg-white/5 rounded-2xl p-3 flex justify-between items-center border border-white/10">
+                        <div>
+                            <p class="text-sm font-bold text-white" id="lingoWord">Terima kasih</p>
+                            <p class="text-[11px] text-gray-400 font-medium" id="lingoMeaning">Thank you (Indonesian)</p>
+                        </div>
+                        <button class="w-9 h-9 rounded-xl bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 flex justify-center items-center hover:bg-neon-cyan hover:text-cosmic-900 transition" onclick="playLingoAudio(document.getElementById('lingoWord').innerText)">
+                            <i class="fa-solid fa-volume-high text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- =========================================================================
+             PART B: MEMORY NOTEBOOK (HOLOGRAPHIC PRISM VAULT - 4 SCREENS + AR)
+             ========================================================================= -->
+
+        <!-- SCREEN M1: VAULT HOME (BENTO NOSTALGIA) -->
+        <main id="screen-vault" class="screen hide-scroll px-5">
+            <div class="flex justify-between items-center mb-5 mt-1">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-neon-cyan/10 border border-neon-cyan/25 mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-pulse"></span>
+                        <p class="font-mono text-[9px] text-neon-cyan font-bold tracking-widest uppercase">LIVE VAULT SYNC</p>
+                    </div>
+                    <h1 class="font-cosmic text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-100 to-fuchsia-300 leading-none">Memory Vault</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button title="Wallpaper & Cosmic Themes" class="w-9 h-9 rounded-2xl glass-dark flex items-center justify-center text-neon-cyan hover:scale-105 transition" onclick="openUnifiedThemeSelector()">
+                        <i class="fa-solid fa-palette text-sm"></i>
+                    </button>
+                    <button title="Search Memories" class="w-9 h-9 rounded-2xl glass-dark flex items-center justify-center text-gray-200 hover:text-neon-cyan transition" onclick="openMemorySearch()">
+                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    </button>
+                    <div title="Vault Profile" class="w-9 h-9 rounded-2xl p-0.5 bg-gradient-to-tr from-neon-pink to-neon-cyan cursor-pointer hover:scale-105 transition" onclick="openVaultProfile()">
+                        <img src="https://placehold.co/100x100/0E1022/00F5FF?text=U" alt="User" class="w-full h-full rounded-[14px] object-cover">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento Grid -->
+            <div class="grid grid-cols-2 gap-3.5">
+                <!-- Take Me Back Hero Card -->
+                <div class="col-span-2 bento-card holo-card rounded-3xl p-1 relative overflow-hidden h-44 group cursor-pointer" onclick="playTakeMeBack()">
+                    <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80" alt="Memories" class="absolute inset-0 w-full h-full object-cover opacity-55 group-hover:scale-110 transition duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-cosmic-900 via-cosmic-900/40 to-transparent"></div>
+                    <div class="absolute top-3 left-3.5 font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full bg-black/50 backdrop-blur border border-white/15 text-neon-cyan">
+                        <i class="fa-solid fa-waveform-lines mr-1"></i> CINEMATIC REEL
+                    </div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center z-10 pt-3">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-neon-pink to-violet-600 flex items-center justify-center mb-2 shadow-[0_0_28px_rgba(255,46,147,0.6)] group-hover:scale-110 transition">
+                            <i class="fa-solid fa-play text-white ml-1 text-lg"></i>
+                        </div>
+                        <h2 class="font-cosmic text-xl text-white font-bold tracking-wide">Take Me Back</h2>
+                        <p class="text-[10px] text-gray-300">Auto-curated nostalgia highlight reel</p>
+                    </div>
+                </div>
+
+                <!-- On This Day -->
+                <div class="bento-card holo-card rounded-3xl p-4 flex flex-col justify-between h-44 relative overflow-hidden cursor-pointer" onclick="openImmersive('https://images.unsplash.com/photo-1516483638261-f40af5aa11df?auto=format&fit=crop&w=900&q=80', 'Cinque Terre · 2 Years Ago')">
+                    <img src="https://images.unsplash.com/photo-1516483638261-f40af5aa11df?auto=format&fit=crop&w=400&q=80" alt="Cinque Terre" class="absolute inset-0 w-full h-full object-cover opacity-50">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"></div>
+                    <div class="relative z-10">
+                        <span class="w-8 h-8 rounded-xl bg-black/50 backdrop-blur border border-neon-cyan/40 flex items-center justify-center text-neon-cyan mb-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                        </span>
+                        <h3 class="font-cosmic font-bold text-sm text-white">On This Day</h3>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="font-mono text-[10px] text-neon-amber font-bold">2 YEARS AGO</p>
+                        <p class="text-xs font-bold text-white">Cinque Terre</p>
+                    </div>
+                </div>
+
+                <!-- Vibe Map / Mood Tracker + 3D Globe -->
+                <div class="bento-card holo-card rounded-3xl p-4 h-44 flex flex-col justify-between relative">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-cosmic font-bold text-sm text-white">Vibe Map</h3>
+                            <p class="font-mono text-[8px] text-gray-400 uppercase tracking-widest">MOOD GRID</p>
+                        </div>
+                        <button title="3D Time-Travel Globe" class="w-8 h-8 rounded-xl bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/35 flex items-center justify-center hover:bg-neon-cyan hover:text-cosmic-900 transition" onclick="showGlobe()">
+                            <i class="fa-solid fa-earth-americas text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 mt-1">
+                        <div class="w-full aspect-square rounded-lg bg-white/5 cursor-pointer" onclick="showToast('Quiet Day — No Logs')"></div>
+                        <div class="w-full aspect-square rounded-lg bg-neon-pink shadow-[0_0_10px_rgba(255,46,147,0.6)] cursor-pointer" onclick="showToast('Romantic Day · Anniversary Dinner', 'fa-heart text-neon-pink')"></div>
+                        <div class="w-full aspect-square rounded-lg bg-white/5 cursor-pointer" onclick="showToast('Quiet Day — No Logs')"></div>
+                        <div class="w-full aspect-square rounded-lg bg-neon-amber shadow-[0_0_10px_rgba(255,209,102,0.6)] cursor-pointer" onclick="showToast('Happy Day · Beach Sunset', 'fa-face-smile text-neon-amber')"></div>
+                        <div class="w-full aspect-square rounded-lg bg-white/5"></div>
+                        <div class="w-full aspect-square rounded-lg bg-white/5"></div>
+                        <div class="w-full aspect-square rounded-lg bg-neon-cyan shadow-[0_0_10px_rgba(0,245,255,0.6)] cursor-pointer" onclick="showToast('Adventure Day · Kerala Backwaters', 'fa-compass text-neon-cyan')"></div>
+                        <div class="w-full aspect-square rounded-lg bg-white/5"></div>
+                    </div>
+                    <button onclick="bridgeGapToPlanner()" class="text-left text-[9px] text-neon-amber hover:text-white leading-tight font-semibold transition">
+                        <i class="fa-solid fa-bolt mr-1"></i>14-day Gap · Plan micro-trip →
+                    </button>
+                </div>
+
+                <!-- Synced Travel Logs Bridge Card -->
+                <div class="col-span-2 holo-card rounded-3xl p-4">
+                    <div class="flex justify-between items-center mb-2.5">
+                        <h3 class="font-mono text-[10px] font-bold uppercase tracking-widest text-neon-cyan"><i class="fa-solid fa-link mr-1.5"></i>Synced Expedition Folders</h3>
+                        <span id="syncedTripCount" class="font-mono text-[10px] text-gray-400">1 folder</span>
+                    </div>
+                    <div id="syncedTripsList" class="space-y-2">
+                        <div class="bg-white/5 rounded-2xl p-3 flex justify-between items-center cursor-pointer border border-white/10 hover:border-neon-cyan/40 transition" onclick="switchMemoryTab('gallery')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-neon-cyan/25 to-blue-600/30 border border-neon-cyan/40 flex items-center justify-center text-neon-cyan">
+                                    <i class="fa-solid fa-cloud-rain text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-white">Kerala Diaries</p>
+                                    <p class="text-[10px] text-gray-400">Vibe: Rainy Adventure · 3 photos</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-xs text-neon-cyan"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- SCREEN M2: HOLOGRAPHIC GALLERY -->
+        <main id="screen-gallery" class="screen hide-scroll px-5">
+            <div class="flex justify-between items-start mb-4 mt-1">
+                <div>
+                    <button class="text-gray-400 hover:text-neon-cyan mb-1.5 transition flex items-center text-xs font-medium" onclick="switchMemoryTab('vault')">
+                        <i class="fa-solid fa-chevron-left mr-1"></i> Back to Vault
+                    </button>
+                    <h1 id="activeFolderTitle" class="font-cosmic text-2xl font-bold text-white mb-1">Kerala Diaries</h1>
+                    <div class="bg-neon-cyan/10 border border-neon-cyan/35 px-3 py-1 rounded-full inline-flex items-center">
+                        <i class="fa-solid fa-cloud-rain text-neon-cyan text-[10px] mr-2"></i>
+                        <span id="activeFolderVibe" class="font-mono text-[10px] font-bold text-cyan-200">Vibe: Rainy Adventure</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1.5">
+                    <button class="w-9 h-9 rounded-2xl glass-dark flex items-center justify-center text-gray-300 hover:text-white transition" onclick="openFolderOptions()">
+                        <i class="fa-solid fa-ellipsis-vertical text-sm"></i>
+                    </button>
+                    <p id="galleryCount" class="font-mono text-[10px] text-gray-400">3 items</p>
+                </div>
+            </div>
+
+            <!-- Film-Frame Masonry Gallery -->
+            <div class="flex flex-col gap-3.5 mb-5" id="gallery-grid">
+                <div class="film-frame relative rounded-3xl overflow-hidden h-52 cursor-pointer group" onclick="openImmersive('https://images.unsplash.com/photo-1518182170546-0766de606acb?auto=format&fit=crop&w=900&q=80', 'Misty Backwaters · Voice Note')">
+                    <img src="https://images.unsplash.com/photo-1518182170546-0766de606acb?auto=format&fit=crop&w=800&q=80" alt="Kerala Rain" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent"></div>
+                    <div class="absolute top-3.5 right-3.5 w-9 h-9 rounded-2xl bg-black/55 backdrop-blur border border-neon-cyan/40 flex items-center justify-center">
+                        <i class="fa-solid fa-microphone text-neon-cyan text-xs"></i>
+                    </div>
+                    <div class="absolute bottom-3 left-3.5 right-3.5 flex justify-between items-center">
+                        <span class="text-xs font-bold text-white">Misty Backwaters</span>
+                        <span class="font-mono text-[9px] text-neon-cyan bg-black/50 px-2 py-0.5 rounded-full border border-white/15">AR READY</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3.5" id="gallery-subgrid">
+                    <div class="film-frame relative rounded-3xl overflow-hidden h-36 cursor-pointer group" onclick="openImmersive('https://images.unsplash.com/photo-1506461883276-594543d0e225?auto=format&fit=crop&w=900&q=80', 'Emerald Tea Hills')">
+                        <img src="https://images.unsplash.com/photo-1506461883276-594543d0e225?auto=format&fit=crop&w=400&q=80" alt="Tea Hills" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                        <div class="absolute bottom-2 left-2.5 bg-black/55 backdrop-blur px-2 py-0.5 rounded-full text-[9px] text-white font-semibold">Tea Hills</div>
+                    </div>
+                    <div class="film-frame relative rounded-3xl overflow-hidden h-36 cursor-pointer group" onclick="openImmersive('https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=900&q=80', 'Houseboat Sunset')">
+                        <img src="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=400&q=80" alt="Houseboat" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                        <div class="absolute bottom-2 left-2.5 bg-black/55 backdrop-blur px-2 py-0.5 rounded-full text-[9px] text-white font-semibold">Houseboat</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Folder Control -->
+            <button class="tactile-btn w-full glass-dark border border-neon-amber/50 text-white font-medium py-3.5 rounded-2xl hover:bg-white/10 transition flex justify-center items-center mb-4" onclick="openCreateCustomFolder()">
+                <i class="fa-solid fa-folder-plus mr-2 text-neon-amber"></i>
+                <span class="text-xs font-bold">[Custom Control] Create Custom Folder</span>
+            </button>
+
+            <!-- Phase 7: AI Storyteller -->
+            <div class="holo-card rounded-3xl p-4 mb-4">
+                <h3 class="font-cosmic text-base font-bold text-white mb-1"><i class="fa-solid fa-book-open-reader text-neon-cyan mr-2"></i>AI Storyteller</h3>
+                <p class="text-[11px] text-gray-400 mb-3">Weaves folder photos & vibes into a poetic narrative or podcast.</p>
+                <div class="flex gap-2">
+                    <button onclick="triggerStoryteller()" class="tactile-btn flex-1 bg-gradient-to-r from-neon-cyan to-blue-500 text-cosmic-900 font-bold py-2.5 rounded-xl text-xs">
+                        Generate Story
+                    </button>
+                    <button onclick="openStoryEditor()" class="tactile-btn flex-1 border border-neon-cyan/50 text-white font-bold py-2.5 rounded-xl hover:bg-white/10 transition text-xs border-dashed">
+                        <i class="fa-solid fa-pen-nib mr-1"></i> Edit Narrative
+                    </button>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-white/10 flex justify-between items-center">
+                    <span class="font-mono text-[9px] text-gray-400 uppercase">[FEEDBACK] VIBE</span>
+                    <div class="flex gap-1.5 text-gray-500 text-xs" id="storyStars">
+                        <i class="fa-solid fa-star cursor-pointer hover:text-neon-amber" onclick="rateStars('storyStars', 1, 'Storytelling')"></i>
+                        <i class="fa-solid fa-star cursor-pointer hover:text-neon-amber" onclick="rateStars('storyStars', 2, 'Storytelling')"></i>
+                        <i class="fa-solid fa-star cursor-pointer hover:text-neon-amber" onclick="rateStars('storyStars', 3, 'Storytelling')"></i>
+                        <i class="fa-solid fa-star cursor-pointer hover:text-neon-amber" onclick="rateStars('storyStars', 4, 'Storytelling')"></i>
+                        <i class="fa-solid fa-star cursor-pointer hover:text-neon-amber" onclick="rateStars('storyStars', 5, 'Storytelling')"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 8: Smart Gallery Clean-up -->
+            <div class="holo-card rounded-3xl p-4 mb-4" style="border-color: rgba(255,46,147,0.35);">
+                <h3 class="font-cosmic text-base font-bold text-white mb-1"><i class="fa-solid fa-broom text-neon-pink mr-2"></i>Smart Clean-up</h3>
+                <p class="text-[11px] text-gray-400 mb-3">Isolates blurry & duplicate captures so only your best smiles remain.</p>
+                <div class="flex gap-2 mb-3">
+                    <button onclick="triggerCleanup()" class="tactile-btn flex-1 bg-gradient-to-r from-neon-pink to-purple-600 text-white font-bold py-2.5 rounded-xl text-xs">
+                        Scan Folder
+                    </button>
+                    <button onclick="openReviewTrashes()" class="tactile-btn flex-1 border border-neon-pink/50 text-white font-bold py-2.5 rounded-xl hover:bg-white/10 transition text-xs border-dashed">
+                        <i class="fa-solid fa-trash-can-arrow-up mr-1"></i> Review Trashes
+                    </button>
+                </div>
+                <div class="bg-black/45 rounded-xl p-2 flex justify-between items-center border border-white/10">
+                    <span class="font-mono text-[9px] text-gray-400 uppercase">[FEEDBACK] BEST SMILES?</span>
+                    <div class="flex gap-1.5">
+                        <button onclick="showToast('Smile AI calibrated: Positive!', 'fa-face-smile text-green-400')" class="text-[10px] text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-lg font-bold">Yes</button>
+                        <button onclick="showToast('We will refine smile scoring!', 'fa-sliders text-rose-400')" class="text-[10px] text-rose-300 bg-rose-500/20 px-2.5 py-0.5 rounded-lg font-bold">No</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Physical Scrapbook -->
+            <button onclick="exportScrapbook()" class="tactile-btn w-full bg-gradient-to-r from-neon-pink via-fuchsia-600 to-indigo-600 text-white font-medium py-3.5 rounded-2xl flex flex-col justify-center items-center shadow-lg shadow-neon-pink/25">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-book-open mr-2"></i>
+                    <span class="text-sm font-bold">Export to Physical Scrapbook</span>
+                </div>
+                <span class="font-mono text-[9px] text-white/80 mt-0.5 uppercase tracking-wider">One-Click Printable Photobook PDF</span>
+            </button>
+        </main>
+
+        <!-- SCREEN M3: ADD MEMORY LOG (IMGBB + SHEETDB) -->
+        <main id="screen-add" class="screen hide-scroll px-5">
+            <div class="flex justify-between items-center mb-1 mt-1">
+                <div>
+                    <span class="font-mono text-[9px] uppercase tracking-widest text-neon-amber font-bold">CLOUD ARCHIVER</span>
+                    <h1 class="font-cosmic text-2xl font-bold text-white">New Memory Log</h1>
+                </div>
+                <button class="w-9 h-9 rounded-2xl glass-dark flex items-center justify-center text-gray-400 hover:text-white transition" onclick="document.getElementById('addMemoryForm').reset(); updateMemoryFileName({files: []});">
+                    <i class="fa-solid fa-rotate-right text-xs"></i>
+                </button>
+            </div>
+            <p class="text-[11px] text-gray-400 mb-5">Uploads to ImgBB cloud & syncs encrypted entry to SheetDB.</p>
+
+            <form id="addMemoryForm" onsubmit="event.preventDefault(); saveMemoryToVault();" class="holo-card rounded-3xl p-5 space-y-4">
+                <div>
+                    <label class="block font-mono text-[10px] font-bold text-neon-cyan uppercase tracking-widest mb-1.5">Memory Title</label>
+                    <input type="text" id="memoryTitle" required placeholder="Ex: Midnight beach walk" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl px-4 py-3.5 text-sm text-white placeholder-gray-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-mono text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Date</label>
+                        <input type="date" id="memoryDate" required class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl px-3 py-3.5 text-xs text-gray-200 [color-scheme:dark]">
+                    </div>
+                    <div>
+                        <label class="block font-mono text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Vibe Tag</label>
+                        <select id="memoryVibe" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl px-3 py-3.5 text-xs text-gray-200 appearance-none">
+                            <option value="Happy" class="bg-cosmic-800">😊 Happy</option>
+                            <option value="Romantic" class="bg-cosmic-800">❤️ Romantic</option>
+                            <option value="Adventure" class="bg-cosmic-800">🧭 Adventure</option>
+                            <option value="Chill" class="bg-cosmic-800">☕ Chill</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-mono text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Visual Media</label>
+                    <div class="bg-white/5 border-dashed border-2 border-neon-amber/40 rounded-2xl p-6 text-center hover:bg-neon-amber/10 transition cursor-pointer" onclick="document.getElementById('memoryPhoto').click()">
+                        <p class="text-xs text-gray-200 font-semibold" id="fileNameDisplay"><i class="fa-solid fa-cloud-arrow-up mr-2 text-neon-amber text-base"></i>Tap to select image</p>
+                        <input type="file" id="memoryPhoto" accept="image/*" class="hidden" required onchange="updateMemoryFileName(this)">
+                    </div>
+                </div>
+
+                <div id="statusMessage" class="hidden p-3 rounded-xl text-xs font-bold text-center border"></div>
+
+                <button type="submit" id="submitMemoryBtn" class="tactile-btn w-full bg-gradient-to-r from-neon-cyan to-indigo-500 text-cosmic-900 font-cosmic font-bold py-4 rounded-2xl shadow-lg shadow-neon-cyan/25 flex justify-center items-center">
+                    <span>Initiate Upload Sequence</span>
+                </button>
+            </form>
+        </main>
+
+        <!-- SCREEN M4: AI CREATIVE STUDIO -->
+        <main id="screen-studio" class="screen hide-scroll px-5">
+            <div class="flex justify-between items-center mb-1 mt-1">
+                <div>
+                    <span class="font-mono text-[9px] uppercase tracking-widest text-neon-pink font-bold">GENERATIVE LAB</span>
+                    <h1 class="font-cosmic text-2xl font-bold text-white">AI Creative Studio</h1>
+                </div>
+                <button title="Reset Studio Effects" class="w-9 h-9 rounded-2xl glass-dark flex items-center justify-center text-neon-cyan hover:bg-white/10 transition" onclick="resetStudioFilters()">
+                    <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Studio Mode Tabs -->
+            <div class="flex p-1 glass-dark rounded-2xl my-4">
+                <button id="tab-ai-magic" class="flex-1 py-2 rounded-xl bg-white/15 text-white text-xs font-bold" onclick="switchStudioMode('magic')">AI Magic</button>
+                <button id="tab-auto-reel" class="flex-1 py-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition" onclick="switchStudioMode('reel')">Auto-Reel</button>
+                <button id="tab-pro-manual" class="flex-1 py-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition" onclick="switchStudioMode('manual')">Pro Manual</button>
+            </div>
+
+            <!-- Studio Canvas Preview -->
+            <input type="file" id="studioFileInput" accept="image/*" class="hidden" onchange="loadStudioLocalImage(this)">
+            <div id="studio-upload-box" class="holo-card rounded-3xl h-48 mb-4 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group" onclick="document.getElementById('studioFileInput').click()">
+                <img id="studioPreviewImg" src="https://images.unsplash.com/photo-1518182170546-0766de606acb?auto=format&fit=crop&w=800&q=80" alt="Studio Preview" class="w-full h-full object-cover opacity-85 transition duration-500">
+                <div class="absolute bottom-3 right-3 bg-black/65 backdrop-blur border border-white/20 px-3 py-1 rounded-full text-[10px] text-white font-bold">
+                    <i class="fa-solid fa-upload mr-1 text-neon-cyan"></i> Swap Photo
+                </div>
+            </div>
+
+            <!-- Studio Panel 1: AI Magic -->
+            <div id="studio-panel-magic">
+                <label class="block font-mono text-[10px] font-bold text-neon-pink uppercase tracking-widest mb-1.5">Generative Prompt</label>
+                <textarea id="studioPrompt" rows="2" placeholder="e.g., 'Convert to neon cyberpunk rain' or 'Warm vintage film'..." class="w-full glass-dark neon-input border border-white/15 rounded-2xl px-4 py-3 text-sm resize-none text-white placeholder-gray-500"></textarea>
+
+                <div class="flex flex-wrap gap-2 mt-2.5 mb-3.5">
+                    <button type="button" onclick="applyPresetPrompt('Cyberpunk Neon Glow')" class="px-3 py-1.5 rounded-xl bg-neon-pink/15 text-neon-pink text-[10px] font-bold border border-neon-pink/35 hover:bg-neon-pink hover:text-white transition">🌃 Cyberpunk</button>
+                    <button type="button" onclick="applyPresetPrompt('Warm Vintage 35mm Film')" class="px-3 py-1.5 rounded-xl bg-neon-amber/15 text-neon-amber text-[10px] font-bold border border-neon-amber/35 hover:bg-neon-amber hover:text-black transition">📸 Vintage</button>
+                    <button type="button" onclick="applyPresetPrompt('Dreamy Watercolor Snow')" class="px-3 py-1.5 rounded-xl bg-neon-cyan/15 text-neon-cyan text-[10px] font-bold border border-neon-cyan/35 hover:bg-neon-cyan hover:text-black transition">❄️ Dreamy</button>
+                </div>
+
+                <button class="tactile-btn w-full bg-gradient-to-r from-neon-pink to-purple-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-neon-pink/35 flex justify-center items-center text-sm mb-4" onclick="triggerAIStudio()">
+                    <i class="fa-solid fa-bolt mr-2"></i> Synthesize with Gemini AI
+                </button>
+            </div>
+
+            <!-- Studio Panel 2: Auto-Reel -->
+            <div id="studio-panel-reel" class="hidden mb-4">
+                <div class="holo-card rounded-2xl p-4 text-center">
+                    <i class="fa-solid fa-clapperboard text-2xl text-neon-cyan mb-2"></i>
+                    <p class="text-xs font-bold text-white mb-1">Beat-Synced Auto-Reel</p>
+                    <p class="text-[11px] text-gray-400 mb-3">Combines your Vault photos with smooth cinematic transitions.</p>
+                    <button onclick="playTakeMeBack()" class="tactile-btn w-full bg-neon-cyan text-cosmic-900 font-bold py-2.5 rounded-xl text-xs">
+                        <i class="fa-solid fa-play mr-1"></i> Preview Auto-Reel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Studio Panel 3: Pro Manual Sliders -->
+            <div id="studio-panel-manual" class="hidden mb-4 holo-card rounded-2xl p-4 space-y-3">
+                <div>
+                    <div class="flex justify-between font-mono text-[10px] text-gray-300 mb-1"><span>BRIGHTNESS</span><span id="valBright">100%</span></div>
+                    <input id="slBright" type="range" min="50" max="170" value="100" oninput="applyManualSliders()" class="w-full accent-neon-cyan">
+                </div>
+                <div>
+                    <div class="flex justify-between font-mono text-[10px] text-gray-300 mb-1"><span>CONTRAST</span><span id="valContrast">100%</span></div>
+                    <input id="slContrast" type="range" min="50" max="180" value="100" oninput="applyManualSliders()" class="w-full accent-neon-pink">
+                </div>
+                <div>
+                    <div class="flex justify-between font-mono text-[10px] text-gray-300 mb-1"><span>SATURATION</span><span id="valSat">100%</span></div>
+                    <input id="slSat" type="range" min="0" max="220" value="100" oninput="applyManualSliders()" class="w-full accent-neon-amber">
+                </div>
+            </div>
+
+            <!-- Feedback System -->
+            <div class="glass-dark rounded-3xl p-4 border border-white/10 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-neon-cyan to-neon-pink"></div>
+                <p class="font-mono text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">[FEEDBACK SYSTEM]</p>
+                <p class="text-xs text-white font-medium mb-3">Did this AI edit match your vision?</p>
+                <div class="flex gap-3">
+                    <button onclick="showToast('Glad you loved the AI edit! 🔥', 'fa-fire text-neon-pink')" class="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-lg hover:bg-neon-pink/25 hover:border-neon-pink transition">🔥</button>
+                    <button onclick="showToast('Feedback noted! Retuning AI filters.', 'fa-sliders text-gray-300')" class="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-lg hover:bg-white/15 transition">👎</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- ================= FULLSCREEN IMMERSIVE AR MEMORY OVERLAY ================= -->
+        <div id="screen-immersive" class="absolute inset-0 z-[120] bg-black hidden flex-col justify-between">
+            <div class="absolute inset-0 overflow-hidden">
+                <img id="immersive-img" src="" alt="Immersive Memory" class="w-full h-full object-cover opacity-80 scale-105">
+                <div class="absolute inset-0 bg-gradient-to-b from-cosmic-900/85 via-transparent to-cosmic-900"></div>
+                <div class="absolute inset-4 border border-white/15 rounded-[2rem] pointer-events-none">
+                    <div class="absolute top-4 left-4 w-5 h-5 border-t-2 border-l-2 border-neon-cyan"></div>
+                    <div class="absolute top-4 right-4 w-5 h-5 border-t-2 border-r-2 border-neon-cyan"></div>
+                    <div class="absolute bottom-4 left-4 w-5 h-5 border-b-2 border-l-2 border-neon-pink"></div>
+                    <div class="absolute bottom-4 right-4 w-5 h-5 border-b-2 border-r-2 border-neon-pink"></div>
+                </div>
+            </div>
+
+            <div class="relative z-10 p-6 pt-10 flex justify-between items-center text-white">
+                <button onclick="closeImmersive()" class="w-10 h-10 rounded-2xl glass-dark flex items-center justify-center hover:bg-white/15 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="glass-dark px-3.5 py-1.5 rounded-full flex items-center gap-2 border-neon-pink/40">
+                    <div class="w-1.5 h-1.5 rounded-full bg-neon-pink animate-pulse"></div>
+                    <span id="immersiveCaption" class="font-mono text-[10px] font-bold uppercase tracking-wider text-white">Spatial Memory</span>
+                </div>
+            </div>
+
+            <div class="relative z-10 p-6 flex flex-col items-center">
+                <button onclick="toggleSoundscape()" class="flex items-center gap-1.5 mb-5 hover:scale-105 transition px-5 py-3 rounded-full glass-dark border border-white/25">
+                    <i id="soundscapeIcon" class="fa-solid fa-play text-white text-xs mr-2"></i>
+                    <div class="sound-bar paused w-1 h-3 bg-neon-cyan rounded-full animate-bounce" style="animation-delay:0.1s"></div>
+                    <div class="sound-bar paused w-1 h-5 bg-neon-pink rounded-full animate-bounce" style="animation-delay:0.2s"></div>
+                    <div class="sound-bar paused w-1 h-4 bg-neon-amber rounded-full animate-bounce" style="animation-delay:0.3s"></div>
+                    <span id="soundscapeLabel" class="text-[10px] font-bold text-white ml-2">Live Soundscape</span>
+                </button>
+
+                <button class="tactile-btn w-full bg-gradient-to-r from-neon-cyan to-blue-600 text-white font-bold py-3.5 rounded-2xl mb-2.5 shadow-lg shadow-neon-cyan/30 flex items-center justify-center text-sm" onclick="launchARMemoryDrop()">
+                    <i class="fa-solid fa-vr-cardboard mr-2"></i> View AR Memory Drop
+                </button>
+
+                <button class="tactile-btn w-full glass-dark text-white/90 font-medium py-3 rounded-2xl border border-white/25 border-dashed mb-5 hover:bg-white/10 transition flex items-center justify-center text-xs" onclick="openDropHiddenMemory()">
+                    <i class="fa-solid fa-eye-slash mr-2 text-neon-amber"></i> [Custom Control] Drop Hidden Memory Here
+                </button>
+
+                <div class="w-full glass-dark rounded-2xl p-3.5 border border-white/15">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="font-mono text-[9px] text-white/50 uppercase">[FEEDBACK]</p>
+                        <p class="text-xs font-medium text-white">How magical was this moment?</p>
+                    </div>
+                    <div class="flex justify-between px-2 text-xl text-gray-500" id="magicStars">
+                        <i class="fa-solid fa-star cursor-pointer transition" onclick="rateStars('magicStars', 1, 'Magic Level')"></i>
+                        <i class="fa-solid fa-star cursor-pointer transition" onclick="rateStars('magicStars', 2, 'Magic Level')"></i>
+                        <i class="fa-solid fa-star cursor-pointer transition" onclick="rateStars('magicStars', 3, 'Magic Level')"></i>
+                        <i class="fa-solid fa-star cursor-pointer transition" onclick="rateStars('magicStars', 4, 'Magic Level')"></i>
+                        <i class="fa-solid fa-star cursor-pointer transition" onclick="rateStars('magicStars', 5, 'Magic Level')"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= BOTTOM NAV 1: TRAVEL STUDIO DOCK ================= -->
+        <div id="nav-travel" class="absolute bottom-4 left-4 right-4 flex justify-center z-50">
+            <nav class="nav-dock-light rounded-3xl px-3 py-2 flex justify-between items-center w-full max-w-[355px]">
+                <div class="flex-1 flex flex-col items-center travel-nav-item active cursor-pointer" data-screen="plan" onclick="switchTravelTab('plan', this)">
+                    <i class="fa-solid fa-compass text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-bold">Plan</span>
+                    <div class="glow-dot mt-0.5"></div>
+                </div>
+                <div class="flex-1 flex flex-col items-center travel-nav-item cursor-pointer" data-screen="active" onclick="switchTravelTab('active', this)">
+                    <i class="fa-solid fa-map-location-dot text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-bold">Live</span>
+                    <div class="glow-dot mt-0.5"></div>
+                </div>
+                <div class="flex-1 flex flex-col items-center travel-nav-item cursor-pointer" data-screen="game" onclick="switchTravelTab('game', this)">
+                    <i class="fa-solid fa-gamepad text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-bold">Arena</span>
+                    <div class="glow-dot mt-0.5"></div>
+                </div>
+                <div class="flex-1 flex flex-col items-center travel-nav-item cursor-pointer" data-screen="util" onclick="switchTravelTab('util', this)">
+                    <i class="fa-solid fa-layer-group text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-bold">Squad</span>
+                    <div class="glow-dot mt-0.5"></div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- ================= BOTTOM NAV 2: MEMORY VAULT DOCK ================= -->
+        <nav id="nav-memory" class="hidden absolute bottom-4 left-4 right-4 nav-dock-dark rounded-3xl px-2 py-2 justify-between items-center z-50">
+            <div class="flex-1 flex flex-col items-center memory-nav-item active cursor-pointer py-1" data-screen="vault" onclick="switchMemoryTab('vault', this)">
+                <i class="fa-solid fa-house text-base mb-0.5"></i>
+                <span class="text-[9px] font-bold">Vault</span>
+                <div class="glow-dot-cyan mt-0.5"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center memory-nav-item cursor-pointer py-1" data-screen="gallery" onclick="switchMemoryTab('gallery', this)">
+                <i class="fa-solid fa-clapperboard text-base mb-0.5"></i>
+                <span class="text-[9px] font-bold">Album</span>
+                <div class="glow-dot-cyan mt-0.5"></div>
+            </div>
+            <div class="flex-1 flex justify-center -mt-7 relative z-10 cursor-pointer" onclick="switchMemoryTab('add')">
+                <div class="w-14 h-14 rounded-2xl rotate-45 bg-gradient-to-tr from-neon-pink via-fuchsia-500 to-neon-cyan text-white shadow-[0_8px_28px_rgba(255,46,147,0.55)] flex items-center justify-center hover:scale-110 transition">
+                    <i class="fa-solid fa-plus text-xl -rotate-45"></i>
+                </div>
+            </div>
+            <div class="flex-1 flex flex-col items-center memory-nav-item cursor-pointer py-1" data-screen="studio" onclick="switchMemoryTab('studio', this)">
+                <i class="fa-solid fa-microchip text-base mb-0.5"></i>
+                <span class="text-[9px] font-bold">Studio</span>
+                <div class="glow-dot-cyan mt-0.5"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center memory-nav-item cursor-pointer py-1" onclick="openVaultSettings()">
+                <i class="fa-solid fa-gear text-base mb-0.5"></i>
+                <span class="text-[9px] font-bold">More</span>
+                <div class="glow-dot-cyan mt-0.5"></div>
+            </div>
+        </nav>
+
+        <!-- ================= UNIFIED ADAPTIVE GLASS MODAL ================= -->
+        <div id="customModal" class="fixed inset-0 flex items-center justify-center modal-overlay p-6">
+            <div class="w-full max-w-sm rounded-[2rem] p-6 modal-box relative overflow-hidden shadow-2xl hide-scroll">
+                <div id="modalAccentBar" class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-neon-cyan via-neon-pink to-neon-amber"></div>
+                <h3 id="modalTitle" class="font-cosmic text-xl font-bold text-white mb-2 mt-2">Title</h3>
+                <div id="modalMessage" class="text-sm font-medium text-gray-300 mb-6 leading-relaxed">Message.</div>
+                <div class="flex gap-3">
+                    <button id="modalPrimaryBtn" class="tactile-btn flex-1 bg-white text-black font-bold py-3.5 rounded-xl hover:bg-gray-200 transition text-sm shadow-md" onclick="handleModalPrimary()">OK</button>
+                    <button id="modalSecondaryBtn" class="tactile-btn flex-1 bg-white/10 text-white border border-white/15 font-bold py-3.5 rounded-xl hover:bg-white/20 transition text-sm hidden" onclick="handleModalSecondary()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =========================================================================
+         UNIFIED REAL-TIME JAVASCRIPT ENGINE (BOTH APPS + BRIDGE + GEMINI/IMGBB/SHEETDB)
+         ========================================================================= -->
+    <script>
+        /* ==================== 1. CONFIGURATION & STATE ==================== */
+        const DEFAULT_CONFIG = {
+            gemini: "AQ.Ab8RN6J8aOXaCobGQ6Y_ivmgwfQIgobszJNvHacUgeQYodipmA",
+            imgbb: "12634aed8b4b8ebefba289b5d49f8ae7",
+            travelSheet: "https://sheetdb.io/api/v1/xxmv0yrm8dra5",
+            memorySheet: "https://sheetdb.io/api/v1/pg4luv13emc9s"
+        };
+
+        let GEMINI_API_KEY = localStorage.getItem('md_gemini_key') || DEFAULT_CONFIG.gemini;
+        let IMGBB_API_KEY = localStorage.getItem('md_imgbb_key') || DEFAULT_CONFIG.imgbb;
+        let TRAVEL_SHEETDB_URL = localStorage.getItem('md_travel_sheet') || DEFAULT_CONFIG.travelSheet;
+        let MEMORY_SHEETDB_URL = localStorage.getItem('md_memory_sheet') || DEFAULT_CONFIG.memorySheet;
+
+        // Active Gemini models (2026) with auto-discovery fallback
+        const PREFERRED_MODELS = [
+            'gemini-2.5-flash',
+            'gemini-3-flash-preview',
+            'gemini-3.1-flash-lite',
+            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite'
+        ];
+        let activeGeminiModel = localStorage.getItem('md_gemini_model') || null;
+
+        // Shared App State
+        let currentAppMode = 'travel';
+        let lastTravelScreen = 'plan';
+        let lastMemoryScreen = 'vault';
+        let generatedTripData = "";
+        let lastGeneratedStory = "Rain tapped softly on the houseboat roof as Kerala's emerald backwaters mirrored the golden dusk. Every laugh echoed across the water, turning a simple trip into a timeless memory.";
+        let activeBucketItemId = null;
+        let sosInterval = null;
+        let currentSpent = 1250;
+        const maxBudget = 1500;
+        let myScore = 2;
+        let soundscapeAudioCtx = null;
+        let soundscapePlaying = false;
+        let syncedFoldersCount = 1;
+
+        // Gallery Items Registry (Supports Live Search & Scrapbook Export)
+        const memoryGalleryItems = [
+            { title: 'Misty Backwaters', vibe: 'Rainy Adventure', url: 'https://images.unsplash.com/photo-1518182170546-0766de606acb?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Emerald Tea Hills', vibe: 'Adventure', url: 'https://images.unsplash.com/photo-1506461883276-594543d0e225?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Houseboat Sunset', vibe: 'Romantic', url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80' }
+        ];
+
+        // Poll Options
+        let pollOptions = [
+            { id: 'pizza', label: '🍕 Wood-Fired Pizza', votes: 2, color: 'bg-brand-ocean' },
+            { id: 'sushi', label: '🍣 Rooftop Sushi Bar', votes: 2, color: 'bg-brand-rose' },
+            { id: 'tacos', label: '🌮 Local Street Tacos', votes: 1, color: 'bg-brand-mango' }
+        ];
+
+        // Unified Cosmic & Wallpaper Themes (Shared identically by Travel Studio & Memory Vault)
+        const cosmicThemes = [
+            { name: 'Cosmic Dark', type: 'gradient', bg: '#05050A', center: '#1B1638', g1: '#FF2E93', g2: '#00F5FF' },
+            { name: 'Sunset Blaze', type: 'gradient', bg: '#0A0505', center: '#2A1118', g1: '#FF3366', g2: '#FF9933' },
+            { name: 'Aurora Forest', type: 'gradient', bg: '#050A07', center: '#112A1B', g1: '#00FF99', g2: '#00F5FF' },
+            { name: 'Nebula Purple', type: 'gradient', bg: '#080510', center: '#210E3D', g1: '#A855F7', g2: '#38BDF8' },
+            { name: 'Santorini Night', type: 'image', url: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=2000&q=80', g1: '#00F5FF', g2: '#3B82F6' },
+            { name: 'Swiss Alps Dusk', type: 'image', url: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?auto=format&fit=crop&w=2000&q=80', g1: '#38BDF8', g2: '#A855F7' },
+            { name: 'Kyoto Neon', type: 'image', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=2000&q=80', g1: '#FF2E93', g2: '#FFD166' },
+            { name: 'Sahara Starlight', type: 'image', url: 'https://images.unsplash.com/photo-1547623641-82fbb83476e9?auto=format&fit=crop&w=2000&q=80', g1: '#F97316', g2: '#FF2E93' }
+        ];
+        let currentCosmicThemeIdx = parseInt(localStorage.getItem('md_theme_idx') || '0', 10);
+
+        /* ==================== 2. DUAL-MODE SWITCHING & NAVIGATION ==================== */
+        function switchAppMode(mode) {
+            currentAppMode = mode;
+            const body = document.body;
+            const btnT = document.getElementById('btnModeTravel');
+            const btnM = document.getElementById('btnModeMemory');
+            const navT = document.getElementById('nav-travel');
+            const navM = document.getElementById('nav-memory');
+
+            // Apply the exact same unified wallpaper theme to both Travel Studio & Memory Vault
+            applyCosmicThemeVisuals();
+
+            if (mode === 'travel') {
+                body.classList.remove('mode-memory');
+                body.classList.add('mode-travel');
+                btnT.classList.add('active-travel');
+                btnM.classList.remove('active-memory');
+                navT.classList.remove('hidden');
+                navM.classList.add('hidden');
+                navM.style.display = 'none';
+                switchTravelTab(lastTravelScreen);
+            } else {
+                body.classList.remove('mode-travel');
+                body.classList.add('mode-memory');
+                btnM.classList.add('active-memory');
+                btnT.classList.remove('active-travel');
+                navT.classList.add('hidden');
+                navM.classList.remove('hidden');
+                navM.style.display = 'flex';
+                switchMemoryTab(lastMemoryScreen);
+            }
+        }
+
+        function switchTravelTab(tabId, element) {
+            lastTravelScreen = tabId;
+            document.querySelectorAll('main.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + tabId).classList.add('active');
+            document.querySelectorAll('.travel-nav-item').forEach(n => n.classList.remove('active'));
+            const match = element || document.querySelector(`.travel-nav-item[data-screen="${tabId}"]`);
+            if (match) match.classList.add('active');
+        }
+
+        function switchMemoryTab(tabId, element) {
+            lastMemoryScreen = tabId;
+            document.querySelectorAll('main.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + tabId).classList.add('active');
+            document.querySelectorAll('.memory-nav-item').forEach(n => n.classList.remove('active'));
+            const match = element || document.querySelector(`.memory-nav-item[data-screen="${tabId}"]`);
+            if (match) match.classList.add('active');
+        }
+
+        /* ==================== 3. TOAST & CUSTOM MODAL SYSTEM ==================== */
+        let toastTimer = null;
+        function showToast(msg, iconClass = "fa-circle-check text-brand-sky") {
+            const toast = document.getElementById('toastBanner');
+            document.getElementById('toastText').innerText = msg;
+            document.getElementById('toastIcon').className = `fa-solid ${iconClass}`;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+        }
+
+        let primaryCb = null;
+        let secondaryCb = null;
+
+        function showModal(title, messageHTML, primaryText = "OK", primaryCallback = null, secondaryText = null, secondaryCallback = null) {
+            document.getElementById('modalTitle').innerHTML = title;
+            document.getElementById('modalMessage').innerHTML = messageHTML;
+
+            const pBtn = document.getElementById('modalPrimaryBtn');
+            pBtn.innerText = primaryText;
+            primaryCb = primaryCallback;
+
+            const sBtn = document.getElementById('modalSecondaryBtn');
+            if (secondaryText) {
+                sBtn.innerText = secondaryText;
+                sBtn.classList.remove('hidden');
+                secondaryCb = secondaryCallback;
+            } else {
+                sBtn.classList.add('hidden');
+                secondaryCb = null;
+            }
+            document.getElementById('customModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.remove('active');
+            if (sosInterval) { clearInterval(sosInterval); sosInterval = null; }
+        }
+
+        function handleModalPrimary() {
+            const cb = primaryCb;
+            primaryCb = null;
+            closeModal();
+            if (typeof cb === 'function') cb();
+        }
+
+        function handleModalSecondary() {
+            const cb = secondaryCb;
+            secondaryCb = null;
+            closeModal();
+            if (typeof cb === 'function') cb();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        /* ==================== 4. REAL-TIME GEMINI AI ENGINE ==================== */
+        async function fetchGeminiEndpoint(modelName, promptText) {
+            const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+            const payload = JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] });
+
+            try {
+                const res = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+                    body: payload
+                });
+                return { ok: res.ok, status: res.status, data: await res.json() };
+            } catch (e) {
+                const res = await fetch(`${baseUrl}?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload
+                });
+                return { ok: res.ok, status: res.status, data: await res.json() };
+            }
+        }
+
+        async function discoverAvailableGeminiModels() {
+            const listUrl = `https://generativelanguage.googleapis.com/v1beta/models`;
+            let data;
+            try {
+                const res = await fetch(listUrl, { headers: { 'x-goog-api-key': GEMINI_API_KEY } });
+                data = await res.json();
+            } catch (e) {
+                const res = await fetch(`${listUrl}?key=${encodeURIComponent(GEMINI_API_KEY)}`);
+                data = await res.json();
+            }
+            if (!data || data.error || !Array.isArray(data.models)) {
+                throw new Error(data?.error?.message || "Unable to list Gemini models.");
+            }
+            return data.models
+                .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name.replace(/^models\//, ''))
+                .filter(name => name.includes('gemini') && !name.includes('embedding') && !name.includes('tts') && !name.includes('image'));
+        }
+
+        async function askGemini(promptText) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("YOUR_GEMINI")) {
+                throw new Error("Missing Gemini API Key. Tap the Key icon in the top bar.");
+            }
+            const candidates = activeGeminiModel
+                ? [activeGeminiModel, ...PREFERRED_MODELS.filter(m => m !== activeGeminiModel)]
+                : [...PREFERRED_MODELS];
+
+            let lastErr = "Gemini connection failed.";
+
+            for (const model of candidates) {
+                try {
+                    const result = await fetchGeminiEndpoint(model, promptText);
+                    if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        activeGeminiModel = model;
+                        localStorage.setItem('md_gemini_model', model);
+                        updateAiStatusBadge(model, true);
+                        return result.data.candidates[0].content.parts[0].text;
+                    }
+                    if (result.data?.error) {
+                        lastErr = result.data.error.message || `HTTP ${result.status}`;
+                        if (result.status === 401 || result.status === 403) {
+                            throw new Error(`Auth Error (${result.status}): ${lastErr}`);
+                        }
+                    }
+                } catch (err) {
+                    lastErr = err.message;
+                    if (lastErr.startsWith("Auth Error")) throw err;
+                }
+            }
+
+            try {
+                const discovered = await discoverAvailableGeminiModels();
+                for (const model of discovered.slice(0, 4)) {
+                    if (candidates.includes(model)) continue;
+                    const result = await fetchGeminiEndpoint(model, promptText);
+                    if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        activeGeminiModel = model;
+                        localStorage.setItem('md_gemini_model', model);
+                        updateAiStatusBadge(model, true);
+                        return result.data.candidates[0].content.parts[0].text;
+                    }
+                }
+            } catch (dErr) {
+                lastErr = dErr.message || lastErr;
+            }
+
+            updateAiStatusBadge("API Error", false);
+            throw new Error(lastErr);
+        }
+
+        function updateAiStatusBadge(label, ok) {
+            const dot = document.getElementById('aiStatusDot');
+            const text = document.getElementById('aiStatusLabel');
+            if (dot && text) {
+                dot.className = ok ? "w-2 h-2 rounded-full bg-brand-leaf animate-pulse" : "w-2 h-2 rounded-full bg-brand-rose";
+                text.innerText = ok ? `Live: ${label}` : label;
+            }
+            const tag = document.getElementById('activeModelTag');
+            if (tag && ok) tag.innerText = `Powered by ${label}`;
+        }
+
+        function showApiErrorModal(errMsg) {
+            showModal(
+                '<span class="text-brand-rose"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Gemini API Notice</span>',
+                `<div class="bg-rose-500/10 border border-rose-400/30 rounded-xl p-3 text-xs font-medium mb-3 break-words">${escapeHtml(errMsg)}</div>
+                 <p class="text-xs opacity-75">Open <b>API Settings</b> to test your key or enter a fresh Google AI Studio key.</p>`,
+                'Open API Settings',
+                () => openApiSettings(),
+                'Close'
+            );
+        }
+
+        /* ==================== 5. UNIFIED API KEY MANAGER ==================== */
+        function openApiSettings() {
+            const inputCls = "w-full p-2.5 rounded-xl border border-white/15 text-xs font-mono bg-white/5 text-white focus:outline-none focus:border-neon-cyan";
+
+            const html = `
+                <div class="space-y-2.5 text-left">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase opacity-60 mb-1">Google Gemini API Key</label>
+                        <input id="cfgGemini" type="text" value="${escapeHtml(GEMINI_API_KEY)}" class="${inputCls}">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase opacity-60 mb-1">ImgBB API Key (Shared)</label>
+                        <input id="cfgImgbb" type="text" value="${escapeHtml(IMGBB_API_KEY)}" class="${inputCls}">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase opacity-60 mb-1">Travel Planner SheetDB URL</label>
+                        <input id="cfgTravelSheet" type="text" value="${escapeHtml(TRAVEL_SHEETDB_URL)}" class="${inputCls}">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase opacity-60 mb-1">Memory Vault SheetDB URL</label>
+                        <input id="cfgMemorySheet" type="text" value="${escapeHtml(MEMORY_SHEETDB_URL)}" class="${inputCls}">
+                    </div>
+                    <button type="button" onclick="testGeminiConnection()" class="w-full bg-brand-ocean/15 text-brand-sky font-bold py-2.5 rounded-xl text-xs hover:bg-brand-ocean hover:text-white transition">
+                        <i class="fa-solid fa-plug-circle-check mr-1"></i> Test Live Gemini Connection
+                    </button>
+                    <p id="testConnStatus" class="text-[11px] font-bold text-center min-h-[16px]"></p>
+                </div>
+            `;
+            showModal('Ecosystem API Settings', html, 'Save All Keys', () => {
+                GEMINI_API_KEY = document.getElementById('cfgGemini').value.trim();
+                IMGBB_API_KEY = document.getElementById('cfgImgbb').value.trim();
+                TRAVEL_SHEETDB_URL = document.getElementById('cfgTravelSheet').value.trim();
+                MEMORY_SHEETDB_URL = document.getElementById('cfgMemorySheet').value.trim();
+                activeGeminiModel = null;
+                localStorage.setItem('md_gemini_key', GEMINI_API_KEY);
+                localStorage.setItem('md_imgbb_key', IMGBB_API_KEY);
+                localStorage.setItem('md_travel_sheet', TRAVEL_SHEETDB_URL);
+                localStorage.setItem('md_memory_sheet', MEMORY_SHEETDB_URL);
+                localStorage.removeItem('md_gemini_model');
+                showToast('All API keys updated!');
+            }, 'Cancel');
+        }
+
+        async function testGeminiConnection() {
+            GEMINI_API_KEY = document.getElementById('cfgGemini').value.trim();
+            activeGeminiModel = null;
+            const el = document.getElementById('testConnStatus');
+            el.className = "text-[11px] font-bold text-center text-brand-sky";
+            el.innerHTML = `<span class="loader mr-1 align-middle"></span> Testing active models...`;
+            try {
+                const res = await askGemini('Reply only with: Connection OK');
+                el.className = "text-[11px] font-bold text-center text-emerald-500";
+                el.innerText = `Connected via ${activeGeminiModel} ("${res.trim()}")`;
+            } catch (err) {
+                el.className = "text-[11px] font-bold text-center text-brand-rose";
+                el.innerText = err.message;
+            }
+        }
+
+        /* ==================== 6. THE BRIDGE (CONNECTING PLANNER <-> VAULT) ==================== */
+        function archiveTripToVault() {
+            const dest = document.getElementById('destInput').value.trim() || "Surprise Trip";
+            const vibe = document.getElementById('vibeInput').value;
+            syncedFoldersCount++;
+
+            const list = document.getElementById('syncedTripsList');
+            list.insertAdjacentHTML('afterbegin', `
+                <div class="bg-white/10 rounded-xl p-3 flex justify-between items-center cursor-pointer border border-neon-pink/30 hover:bg-white/15 transition" onclick="openArchivedFolder('${escapeHtml(dest).replace(/'/g, "\\'")}', '${escapeHtml(vibe)}')">
+                    <div>
+                        <p class="text-xs font-bold text-white">${escapeHtml(dest)} Trip</p>
+                        <p class="text-[10px] text-neon-cyan">Vibe: ${escapeHtml(vibe)} · Archived from Planner</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-neon-pink"></i>
+                </div>
+            `);
+            document.getElementById('syncedTripCount').innerText = `${syncedFoldersCount} folders`;
+
+            // Also update active folder in Memory Gallery
+            document.getElementById('activeFolderTitle').innerText = `${dest} Diaries`;
+            document.getElementById('activeFolderVibe').innerText = `Vibe: ${vibe}`;
+
+            switchAppMode('memory');
+            switchMemoryTab('vault');
+            showToast(`Archived "${dest}" to Memory Vault!`, 'fa-vault text-neon-pink');
+        }
+
+        function openArchivedFolder(name, vibe) {
+            document.getElementById('activeFolderTitle').innerText = `${name} Diaries`;
+            document.getElementById('activeFolderVibe').innerText = `Vibe: ${vibe}`;
+            switchMemoryTab('gallery');
+        }
+
+        function bridgeGapToPlanner() {
+            switchAppMode('travel');
+            switchTravelTab('plan');
+            surpriseDestination();
+            showToast('Micro-trip suggestion loaded from Memory Gap!', 'fa-sparkles text-brand-mango');
+        }
+
+        function planDestinationFromGlobe(destName) {
+            closeModal();
+            switchAppMode('travel');
+            switchTravelTab('plan');
+            document.getElementById('destInput').value = destName;
+            showToast(`Loaded ${destName} in Planner!`);
+        }
+
+        /* ==================== 7. TRAVEL PLANNER FEATURES ==================== */
+        function openUnifiedThemeSelector() {
+            const gradCards = cosmicThemes.slice(0, 4).map((t, i) => `
+                <div onclick="selectUnifiedTheme(${i})" class="cursor-pointer rounded-2xl p-2 border ${currentCosmicThemeIdx === i ? 'border-neon-cyan ring-2 ring-neon-cyan/40' : 'border-white/15'} hover:scale-105 transition flex flex-col items-center gap-1.5 bg-white/5">
+                    <div class="w-full h-10 rounded-xl shadow-inner" style="background: radial-gradient(circle at 30% 30%, ${t.g1}, ${t.center} 55%, ${t.bg})"></div>
+                    <span class="text-[9px] font-bold text-gray-200 truncate w-full text-center">${t.name}</span>
+                </div>
+            `).join('');
+
+            const picCards = cosmicThemes.slice(4).map((t, idx) => {
+                const i = idx + 4;
+                return `
+                    <div onclick="selectUnifiedTheme(${i})" class="h-20 rounded-2xl bg-cover bg-center cursor-pointer border-2 ${currentCosmicThemeIdx === i ? 'border-neon-cyan' : 'border-white/20'} hover:scale-[1.03] transition relative overflow-hidden" style="background-image:url('${t.url}')">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+                        <span class="absolute bottom-1.5 left-2.5 text-[10px] font-bold text-white">${t.name}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const html = `
+                <p class="mb-3 text-xs text-gray-400">Synced across both <b>Travel Studio</b> & <b>Memory Vault</b>:</p>
+                <p class="font-mono text-[9px] uppercase tracking-widest text-neon-cyan font-bold mb-2">Cosmic Glow Themes</p>
+                <div class="grid grid-cols-2 gap-2.5 mb-4">${gradCards}</div>
+                <p class="font-mono text-[9px] uppercase tracking-widest text-neon-pink font-bold mb-2">Scenic Dark Wallpapers</p>
+                <div class="grid grid-cols-2 gap-2.5">${picCards}</div>
+            `;
+            showModal('Unified Wallpaper Themes', html, 'Done');
+        }
+
+        function selectUnifiedTheme(idx) {
+            currentCosmicThemeIdx = idx;
+            localStorage.setItem('md_theme_idx', String(idx));
+            applyCosmicThemeVisuals();
+            showToast(`Theme synced: ${cosmicThemes[idx].name}`, 'fa-palette text-neon-cyan');
+        }
+
+        let slideshowPaused = false;
+        function playTakeMeBack() {
+            slideshowPaused = false;
+            const img1 = memoryGalleryItems[0]?.url || 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=800&q=80';
+            const img2 = memoryGalleryItems[1]?.url || 'https://images.unsplash.com/photo-1506461883276-594543d0e225?auto=format&fit=crop&w=800&q=80';
+            const img3 = memoryGalleryItems[2]?.url || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80';
+            const html = `
+                <div class="relative w-full h-52 rounded-2xl overflow-hidden bg-black shadow-inner">
+                    <img src="${img1}" class="slideshow-img">
+                    <img src="${img2}" class="slideshow-img">
+                    <img src="${img3}" class="slideshow-img">
+                    <div class="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 bg-black/60 backdrop-blur px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-music text-white text-[10px] animate-pulse"></i>
+                        <span class="text-[10px] text-white font-bold">Memory Reel</span>
+                    </div>
+                    <button onclick="toggleSlideshow()" id="slideToggleBtn" class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center shadow">
+                        <i class="fa-solid fa-pause text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-center mt-3 font-bold italic opacity-80">"Synced from your Memory Vault"</p>
+            `;
+            showModal('Take Me Back', html, 'Close Player');
+        }
+        function toggleSlideshow() {
+            slideshowPaused = !slideshowPaused;
+            document.querySelectorAll('.slideshow-img').forEach(i => i.classList.toggle('paused', slideshowPaused));
+            const b = document.getElementById('slideToggleBtn');
+            if (b) b.innerHTML = slideshowPaused ? '<i class="fa-solid fa-play text-xs"></i>' : '<i class="fa-solid fa-pause text-xs"></i>';
+        }
+
+        function surpriseDestination() {
+            const places = ["Bali, Indonesia", "Kyoto, Japan", "Goa, India", "Santorini, Greece", "Munnar, Kerala", "Swiss Alps", "Amalfi Coast, Italy", "Manali, India"];
+            const pick = places[Math.floor(Math.random() * places.length)];
+            document.getElementById('destInput').value = pick;
+            showToast(`Roulette picked: ${pick}!`, 'fa-dice text-brand-mango');
+        }
+
+        async function generateAITrip() {
+            let dest = document.getElementById('destInput').value.trim();
+            if (!dest) { surpriseDestination(); dest = document.getElementById('destInput').value; }
+            const budget = document.getElementById('budgetInput').value;
+            const vibe = document.getElementById('vibeInput').value;
+            const btn = document.getElementById('generateTripBtn');
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="loader mr-2 border-t-white"></span> Calling Gemini AI...`;
+
+            try {
+                const prompt = `Create a concise 1-day travel itinerary for ${dest} (${budget} budget, ${vibe} vibe). Return exactly 3 short lines (Morning, Afternoon, Evening) with specific place names and approximate cost. Plain text only.`;
+                generatedTripData = await askGemini(prompt);
+
+                const contentDiv = document.getElementById('itineraryContent');
+                contentDiv.innerHTML = "";
+                const lines = generatedTripData.split('\n').map(l => l.replace(/[*#•\-]/g, '').trim()).filter(Boolean);
+                const dotCls = ['bg-neon-cyan', 'bg-neon-pink', 'bg-neon-amber'];
+
+                lines.forEach((line, i) => {
+                    contentDiv.innerHTML += `
+                        <div class="relative mt-3.5">
+                            <div class="absolute -left-[23px] top-1.5 w-3 h-3 ${dotCls[i % 3]} rounded-full border-2 border-cosmic-900 shadow-sm"></div>
+                            <p class="text-sm font-medium text-gray-200 leading-relaxed">${escapeHtml(line)}</p>
+                        </div>`;
+                });
+                document.getElementById('aiOutputBox').classList.remove('hidden');
+
+                // Sync to Live Execution screen
+                const times = ['09:30 AM', '01:30 PM · LIVE NOW', '07:00 PM'];
+                document.getElementById('liveTimeline').innerHTML = lines.map((line, i) => `
+                    <div class="relative">
+                        <div class="absolute ${i === 1 ? '-left-[23px] w-4 h-4 bg-neon-cyan border-[3px] animate-pulse shadow-[0_0_12px_rgba(0,245,255,0.8)]' : '-left-[21px] w-3 h-3 bg-gray-500 border-2'} rounded-full border-cosmic-900"></div>
+                        <p class="font-mono text-[10px] font-bold ${i === 1 ? 'text-neon-cyan bg-neon-cyan/15 inline-block px-2.5 py-0.5 rounded-full' : 'text-gray-400'}">${times[i] || 'LATER'}</p>
+                        <div class="${i === 1 ? 'holo-card border-l-4 border-l-neon-cyan' : 'glass-dark'} p-4 rounded-2xl mt-1.5">
+                            <p class="text-sm font-bold text-white">${escapeHtml(line)}</p>
+                        </div>
+                    </div>
+                `).join('');
+
+                btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> Itinerary Ready!`;
+                showToast(`Generated & synced ${dest} plan!`);
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> Generate AI Itinerary`;
+                }, 2000);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> Generate AI Itinerary`;
+                showApiErrorModal(err.message);
+            }
+        }
+
+        function openCustomBuilder() {
+            const html = `
+                <div class="space-y-3 text-left">
+                    <input id="customTime" type="time" value="16:30" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white [color-scheme:dark]">
+                    <input id="customActivity" type="text" placeholder="Activity (e.g., Sunset Cliff Walk)" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white placeholder-gray-500">
+                    <input id="customCost" type="number" placeholder="Est. Cost in $ (optional)" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white placeholder-gray-500">
+                </div>
+            `;
+            showModal('Custom Itinerary Stop', html, 'Add to Timeline', () => {
+                const time = document.getElementById('customTime').value || '16:30';
+                const act = document.getElementById('customActivity').value.trim();
+                const cost = parseFloat(document.getElementById('customCost').value) || 0;
+                if (!act) return showToast('Enter an activity name!', 'fa-circle-exclamation text-neon-amber');
+                appendTimelineCard(time, act, cost > 0 ? `Custom Stop · Est: $${cost}` : 'Custom Stop');
+                if (cost > 0) updateBudgetDisplay(currentSpent + cost);
+                switchTravelTab('active');
+                showToast('Custom stop added!');
+            }, 'Cancel');
+        }
+
+        function appendTimelineCard(timeLabel, title, subtitle) {
+            document.getElementById('liveTimeline').insertAdjacentHTML('beforeend', `
+                <div class="relative">
+                    <div class="absolute -left-[22px] w-3.5 h-3.5 bg-neon-amber rounded-full border-2 border-cosmic-900 shadow-sm"></div>
+                    <p class="font-mono text-[10px] font-bold text-neon-amber">${escapeHtml(timeLabel)}</p>
+                    <div class="holo-card p-4 rounded-2xl mt-1.5 border-l-4 border-l-neon-amber">
+                        <h4 class="font-bold text-white text-sm">${escapeHtml(title)}</h4>
+                        <p class="text-xs text-gray-400 font-medium mt-1">${escapeHtml(subtitle)}</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        async function saveTripToSheetDB() {
+            if (!generatedTripData) return showToast('Generate a trip first!', 'fa-circle-info text-brand-mango');
+            const dest = document.getElementById('destInput').value.trim() || "Surprise Trip";
+            const btn = document.getElementById('saveDbBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="loader border-t-white w-3 h-3"></span>`;
+            try {
+                const res = await fetch(TRAVEL_SHEETDB_URL, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [{ Destination: dest, Itinerary: generatedTripData.replace(/\n/g, ' | '), Date: new Date().toLocaleDateString() }] })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                showToast('Trip saved to Travel SheetDB!', 'fa-database text-brand-leaf');
+            } catch (err) {
+                showModal('SheetDB Error', escapeHtml(err.message), 'API Settings', () => openApiSettings(), 'Close');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-database mr-1"></i> Save DB`;
+            }
+        }
+
+        function updateBudgetDisplay(newAmt) {
+            currentSpent = Math.max(0, Math.round(newAmt));
+            document.getElementById('spentBudget').innerText = `$${currentSpent.toLocaleString()}`;
+            const pct = Math.min(100, Math.round((currentSpent / maxBudget) * 100));
+            document.getElementById('budgetBar').style.width = `${pct}%`;
+            document.getElementById('spentBudget').classList.toggle('text-brand-rose', pct >= 90);
+        }
+
+        function adjustBudget(accurate) {
+            if (!accurate) { updateBudgetDisplay(currentSpent + 100); showToast('Recalibrated budget (+$100)', 'fa-sliders text-brand-rose'); }
+            else showToast('Budget accuracy confirmed!', 'fa-thumbs-up text-brand-leaf');
+        }
+
+        function openAddExpense() {
+            showModal('Log Quick Expense', `
+                <input id="expName" type="text" placeholder="Item (e.g., Boat Ride)" class="w-full mb-3 p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white placeholder-gray-500">
+                <input id="expCost" type="number" placeholder="Cost in $" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white placeholder-gray-500">
+            `, 'Log Expense', () => {
+                const amt = parseFloat(document.getElementById('expCost').value) || 0;
+                if (amt > 0) { updateBudgetDisplay(currentSpent + amt); showToast(`Logged $${amt} expense!`); }
+            }, 'Cancel');
+        }
+
+        async function rescheduleTrip() {
+            const dest = document.getElementById('destInput').value.trim() || "the city";
+            showModal("AI Auto-Adapting...", `<div class="flex justify-center my-4"><span class="loader-dark"></span></div><p class="text-center text-xs text-gray-300">Finding instant late-evening spot in <b>${escapeHtml(dest)}</b>...</p>`, "Cancel");
+            try {
+                const text = (await askGemini(`Plans changed suddenly! Suggest one fun, specific evening spot in ${dest} right now under 18 words. Plain text only.`)).replace(/[*#]/g, '').trim();
+                showModal("Route Adapted!", `<div class="bg-neon-cyan/10 p-4 rounded-xl border border-neon-cyan/30"><p class="text-sm font-medium text-white">${escapeHtml(text)}</p></div>`, "Add to Timeline", () => {
+                    appendTimelineCard('NOW · RESCHEDULED', text, 'AI Auto-Adapted Stop');
+                    showToast('Added to Live Execution!');
+                }, "Dismiss");
+            } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        function openCustomBet() {
+            showModal('Create Custom Bet', `
+                <input id="newBet" type="text" placeholder="Challenge: e.g., Order in local slang" class="w-full mb-3 p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white placeholder-gray-500">
+                <input id="newReward" type="text" placeholder="Reward: e.g., Loser buys ice cream!" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white placeholder-gray-500">
+            `, 'Lock Bet', () => {
+                const b = document.getElementById('newBet').value.trim();
+                const r = document.getElementById('newReward').value.trim();
+                if (b) document.getElementById('activeBetText').innerText = b;
+                if (r) document.getElementById('activeRewardText').innerText = r;
+                showToast('New challenge locked in!', 'fa-fire text-neon-pink');
+            }, 'Cancel');
+        }
+
+        function claimBetWin() {
+            myScore++;
+            document.getElementById('myScore').innerText = myScore;
+            showToast('Victory! +1 Point added!', 'fa-trophy text-brand-mango');
+        }
+
+        function showGlobe() {
+            const html = `
+                <div class="globe-wrapper mb-4">
+                    <div class="globe-pin" style="top:30%;left:58%;" onclick="document.getElementById('pinInfo').innerHTML='📍 <b>Kyoto, Japan</b> (Past Memory)<br><button onclick=&quot;planDestinationFromGlobe(\\'Kyoto, Japan\\')&quot; class=&quot;mt-2 px-3 py-1 rounded-full bg-brand-ocean text-white text-[10px] font-bold&quot;>Re-Plan Trip →</button>'"></div>
+                    <div class="globe-pin" style="top:52%;left:26%;background:#2A9D8F;box-shadow:0 0 12px #2A9D8F;" onclick="document.getElementById('pinInfo').innerHTML='🎯 <b>Bali, Indonesia</b> (Future Bucket Goal)<br><button onclick=&quot;planDestinationFromGlobe(\\'Bali, Indonesia\\')&quot; class=&quot;mt-2 px-3 py-1 rounded-full bg-brand-ocean text-white text-[10px] font-bold&quot;>Plan Now in WanderSync →</button>'"></div>
+                    <div class="globe-pin" style="top:38%;left:44%;background:#FF9F1C;box-shadow:0 0 12px #FF9F1C;" onclick="document.getElementById('pinInfo').innerHTML='📍 <b>Kerala, India</b> (Vault Diary)<br><button onclick=&quot;closeModal();switchAppMode(\\'memory\\');switchMemoryTab(\\'gallery\\')&quot; class=&quot;mt-2 px-3 py-1 rounded-full bg-pink-500 text-white text-[10px] font-bold&quot;>Open in Memory Vault →</button>'"></div>
+                </div>
+                <div id="pinInfo" class="text-xs text-center font-medium bg-slate-500/10 py-2.5 px-3 rounded-xl">Tap any glowing pin to jump between Planner & Vault!</div>
+            `;
+            showModal('3D Time-Travel Globe', html, 'Close');
+        }
+
+        async function generateBucketList() {
+            const dest = document.getElementById('destInput').value.trim() || "Bali";
+            showModal("Generating Bucket List...", `<div class="flex justify-center my-4"><span class="loader-dark"></span></div>`, "Cancel");
+            try {
+                const raw = await askGemini(`List 3 fun bucket list challenges for ${dest}. One short line each, max 8 words, plain text.`);
+                const items = raw.split('\n').map(i => i.replace(/^[\d.\-*•\s]+/, '').trim()).filter(Boolean).slice(0, 3);
+                document.getElementById('bucketListContainer').innerHTML = items.map((item, idx) => {
+                    const id = `bucket-ai-${Date.now()}-${idx}`;
+                    return `
+                        <div id="${id}" class="holo-card p-4 rounded-2xl flex items-center justify-between cursor-pointer transition" onclick="triggerBucketProof('${id}')">
+                            <div class="flex items-center flex-1 pr-2">
+                                <div class="bucket-check w-8 h-8 rounded-xl border-2 border-white/25 bg-white/5 flex items-center justify-center mr-3 shrink-0"></div>
+                                <span class="bucket-label text-sm font-bold text-white">${escapeHtml(item)}</span>
+                            </div>
+                            <div class="bucket-icon w-10 h-10 rounded-xl bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 flex justify-center items-center shrink-0 overflow-hidden">
+                                <i class="fa-solid fa-camera text-sm"></i>
+                            </div>
+                        </div>`;
+                }).join('');
+                closeModal();
+                showToast(`Generated ${items.length} tasks for ${dest}!`);
+            } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        function triggerBucketProof(itemId) {
+            activeBucketItemId = itemId;
+            document.getElementById('proofUpload').value = "";
+            document.getElementById('proofUpload').click();
+        }
+
+        async function uploadBucketListProof(input) {
+            if (!input.files || !input.files[0]) return;
+            showModal("Uploading Proof...", `<div class="flex justify-center my-4"><span class="loader w-6 h-6"></span></div><p class="text-center text-xs">Uploading to ImgBB & syncing to Memory Vault...</p>`, "Wait");
+            try {
+                const fd = new FormData();
+                fd.append("image", input.files[0]);
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error("ImgBB upload failed");
+
+                const url = data.data.url;
+                const card = document.getElementById(activeBucketItemId);
+                let taskTitle = "Bucket List Win";
+                if (card) {
+                    const check = card.querySelector('.bucket-check');
+                    const label = card.querySelector('.bucket-label');
+                    const icon = card.querySelector('.bucket-icon');
+                    if (label) { taskTitle = label.innerText; label.classList.add('line-through', 'text-gray-400'); }
+                    if (check) { check.className = "bucket-check w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-300 border border-emerald-400/35 flex items-center justify-center mr-3 shrink-0"; check.innerHTML = '<i class="fa-solid fa-check text-xs"></i>'; }
+                    if (icon) icon.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+                }
+
+                // BRIDGE: Auto-push proof photo into Memory Notebook Gallery!
+                addPhotoToVaultGallery(taskTitle, "Adventure", url);
+
+                showModal(
+                    "Achievement Unlocked! 🏆",
+                    `<img src="${url}" class="w-full h-36 object-cover rounded-xl mb-3 shadow"><p class="text-xs text-center font-bold text-brand-leaf">Photo uploaded & automatically added to your Memory Vault!</p>`,
+                    "View in Vault",
+                    () => { switchAppMode('memory'); switchMemoryTab('gallery'); },
+                    "Stay Here"
+                );
+            } catch (err) { showModal("Upload Failed", escapeHtml(err.message), "Close"); }
+        }
+
+        function findMeetupPoint() {
+            showModal("Group Radar: Scanning", `<div class="text-center my-4"><div class="w-14 h-14 rounded-full bg-neon-cyan/15 mx-auto flex items-center justify-center mb-3 relative"><div class="absolute inset-0 rounded-full border-2 border-neon-cyan animate-ping opacity-50"></div><i class="fa-solid fa-satellite-dish text-xl text-neon-cyan"></i></div><p class="text-xs font-bold text-gray-300">Triangulating 4 group members' GPS...</p></div>`, "Cancel");
+            setTimeout(() => {
+                const dest = document.getElementById('destInput').value.trim() || "City Center";
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dest + ' Central Cafe')}`;
+                showModal("Optimal Meetup Found!", `<div class="bg-white/5 border border-neon-cyan/30 rounded-2xl p-4 text-white"><h4 class="text-neon-cyan font-bold mb-1"><i class="fa-solid fa-location-dot mr-2 text-neon-pink"></i>Central Cafe (${escapeHtml(dest)})</h4><p class="text-xs text-gray-300">Equidistant midpoint for all 4 travelers (~11 min ETA).</p></div>`, "Open Maps", () => window.open(mapsUrl, '_blank'), "Close");
+            }, 1600);
+        }
+
+        function openSplitBill() {
+            showModal('Split Bill Calculator', `
+                <div class="bg-white/5 border border-white/15 p-4 rounded-2xl mb-3 text-center text-white">
+                    <p class="font-mono text-[10px] font-bold text-gray-400 uppercase mb-1">Total Bill ($)</p>
+                    <input type="number" id="billAmount" class="w-full text-center text-3xl font-black bg-transparent outline-none text-white" placeholder="0" oninput="recalcSplit()">
+                </div>
+                <div class="flex items-center justify-between bg-white/5 px-4 py-2.5 rounded-xl border border-white/15 mb-3 text-white">
+                    <span class="text-xs font-bold">People:</span>
+                    <div class="flex items-center gap-3">
+                        <button type="button" class="w-7 h-7 rounded-full bg-white/10 border border-white/20 font-bold" onclick="stepSplit(-1)">-</button>
+                        <span id="splitPeople" class="font-bold text-sm">4</span>
+                        <button type="button" class="w-7 h-7 rounded-full bg-white/10 border border-white/20 font-bold" onclick="stepSplit(1)">+</button>
+                    </div>
+                </div>
+                <div class="text-center"><span class="text-3xl font-black text-neon-cyan" id="splitResult">$0.00</span><span class="text-xs font-bold text-gray-400 ml-1">each</span></div>
+            `, 'Send Requests', () => showToast(`Sent ${document.getElementById('splitResult').innerText} split requests!`), 'Close');
+        }
+        function stepSplit(d) {
+            const el = document.getElementById('splitPeople');
+            el.innerText = Math.max(2, Math.min(12, parseInt(el.innerText, 10) + d));
+            recalcSplit();
+        }
+        function recalcSplit() {
+            const total = parseFloat(document.getElementById('billAmount')?.value) || 0;
+            const n = parseInt(document.getElementById('splitPeople')?.innerText, 10) || 4;
+            document.getElementById('splitResult').innerText = '$' + (total / n).toFixed(2);
+        }
+
+        function renderPollHTML() {
+            const total = pollOptions.reduce((s, o) => s + o.votes, 0) || 1;
+            return `<div class="space-y-2.5">` + pollOptions.map(o => {
+                const pct = Math.round((o.votes / total) * 100);
+                return `<div class="bg-white/5 border border-white/15 p-3 rounded-xl cursor-pointer relative overflow-hidden text-white" onclick="votePoll('${o.id}')"><div class="absolute top-0 left-0 h-full ${o.color} opacity-30 transition-all" style="width:${pct}%"></div><div class="relative z-10 flex justify-between text-sm font-bold"><span>${o.label}</span><span>${o.votes} (${pct}%)</span></div></div>`;
+            }).join('') + `</div>`;
+        }
+        function openLivePoll() { showModal('Vote: Dinner Spot', renderPollHTML(), 'Done'); }
+        function votePoll(id) {
+            const opt = pollOptions.find(o => o.id === id);
+            if (opt) opt.votes++;
+            document.getElementById('pollSummary').innerText = `${pollOptions.reduce((s, o) => s + o.votes, 0)} votes cast`;
+            document.getElementById('modalMessage').innerHTML = renderPollHTML();
+            showToast(`Voted for ${opt.label}!`);
+        }
+
+        function triggerSOS() {
+            let c = 3;
+            showModal('<span class="text-brand-rose"><i class="fa-solid fa-triangle-exclamation mr-2"></i>SOS Alert</span>', `Acquiring GPS & alerting Emergency Contacts in <span id="sosCountdown" class="font-black text-2xl ml-1 text-brand-rose">${c}</span>s...`, 'Cancel SOS', () => showToast('SOS Cancelled'));
+            sosInterval = setInterval(() => {
+                c--;
+                const el = document.getElementById('sosCountdown');
+                if (el) el.innerText = c;
+                if (c <= 0) {
+                    clearInterval(sosInterval); sosInterval = null;
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            p => showSOSSent(`${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`),
+                            () => showSOSSent('17.3850° N, 78.4867° E (Cached GPS)')
+                        );
+                    } else showSOSSent('17.3850° N, 78.4867° E (Cached GPS)');
+                }
+            }, 1000);
+        }
+        function showSOSSent(coords) {
+            showModal('SOS Dispatched', `<div class="text-center"><i class="fa-solid fa-circle-check text-4xl text-brand-leaf mb-2"></i><p class="font-bold">Live Location Shared!</p><p class="text-xs opacity-70 font-mono mt-1">${escapeHtml(coords)}</p></div>`, 'Close');
+        }
+
+        async function fetchCulturalEvents() {
+            const dest = document.getElementById('destInput').value.trim() || "Bali";
+            showModal("Cultural Connect", `<div class="flex justify-center my-4"><span class="loader-dark"></span></div><p class="text-center text-xs text-gray-300">Scanning festivals in <b>${escapeHtml(dest)}</b>...</p>`, "Cancel");
+            try {
+                const text = (await askGemini(`Name 2 authentic local cultural festivals or night markets in ${dest} with 1 short sentence each. Plain text only.`)).replace(/[*#]/g, '').trim();
+                showModal(`Cultural Events: ${dest}`, `<div class="bg-neon-amber/10 p-4 rounded-xl border border-neon-amber/30 text-xs text-gray-200 leading-relaxed whitespace-pre-line">${escapeHtml(text)}</div>`, "Add to Timeline", () => {
+                    appendTimelineCard('CULTURAL EVENT', `Local Festival in ${dest}`, text.split('\n')[0]);
+                    showToast('Added event to timeline!');
+                }, "Close");
+            } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        async function fetchPackingList() {
+            const dest = document.getElementById('destInput').value.trim() || "Bali";
+            showModal("AI Packing Guide", `<div class="flex justify-center my-4"><span class="loader-dark"></span></div>`, "Cancel");
+            try {
+                const raw = await askGemini(`List 5 essential packing items for ${dest}. One item per line, plain text only.`);
+                const items = raw.split('\n').map(i => i.replace(/^[\d.\-*•\s]+/, '').trim()).filter(Boolean).slice(0, 5);
+                const html = `<div class="space-y-2 text-left">` + items.map(it => `<label class="flex items-center gap-3 bg-white/5 border border-white/10 p-3 rounded-xl cursor-pointer text-white"><input type="checkbox" class="w-4 h-4 accent-neon-cyan"><span class="text-xs font-bold">${escapeHtml(it)}</span></label>`).join('') + `</div>`;
+                showModal(`Packing List: ${dest}`, html, 'Done');
+            } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        async function fetchLocalLingo() {
+            const dest = document.getElementById('destInput').value.trim() || "Kyoto, Japan";
+            const box = document.getElementById('lingoContainer');
+            box.innerHTML = `<div class="p-3 text-center text-xs font-bold text-neon-cyan"><span class="loader-dark mr-2 align-middle"></span>Fetching phrases for ${escapeHtml(dest)}...</div>`;
+            try {
+                const raw = await askGemini(`Give 3 useful traveler phrases in the native language of ${dest}. Format strictly as: Native Phrase | English Meaning. Plain text only.`);
+                const lines = raw.split('\n').map(l => l.replace(/^[\d.\-*•\s]+/, '').trim()).filter(l => l.includes('|')).slice(0, 3);
+                if (!lines.length) throw new Error("Try generating again.");
+                box.innerHTML = lines.map(l => {
+                    const [phrase, meaning] = l.split('|').map(s => s.trim());
+                    return `<div class="bg-white/5 rounded-2xl p-3 flex justify-between items-center border border-white/10"><div><p class="text-sm font-bold text-white">${escapeHtml(phrase)}</p><p class="text-[11px] text-gray-400 font-medium">${escapeHtml(meaning)}</p></div><button class="w-9 h-9 rounded-xl bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 flex justify-center items-center hover:bg-neon-cyan hover:text-cosmic-900 transition" onclick="playLingoAudio('${escapeHtml(phrase).replace(/'/g, "\\'")}')"><i class="fa-solid fa-volume-high text-sm"></i></button></div>`;
+                }).join('');
+                showToast(`Loaded local lingo for ${dest}!`);
+            } catch (err) {
+                box.innerHTML = `<p class="text-xs text-neon-pink text-center p-2">Could not fetch phrases. Check API key.</p>`;
+                showApiErrorModal(err.message);
+            }
+        }
+
+        function playLingoAudio(word) {
+            if (!word || !('speechSynthesis' in window)) return showToast('Audio not supported');
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(word);
+            u.rate = 0.92;
+            window.speechSynthesis.speak(u);
+            showToast(`Speaking: "${word}"`, 'fa-volume-high text-brand-ocean');
+        }
+
+        /* ==================== 8. MEMORY NOTEBOOK FEATURES ==================== */
+        function applyCosmicThemeVisuals() {
+            const t = cosmicThemes[currentCosmicThemeIdx] || cosmicThemes[0];
+            if (t.type === 'image') {
+                document.body.style.backgroundImage = `url('${t.url}')`;
+            } else {
+                document.body.style.backgroundImage = `radial-gradient(circle at 50% 0%, ${t.center} 0%, ${t.bg} 100%)`;
+            }
+            document.querySelector('.glow-1').style.background = t.g1;
+            document.querySelector('.glow-2').style.background = t.g2;
+        }
+        function cycleCosmicTheme() {
+            currentCosmicThemeIdx = (currentCosmicThemeIdx + 1) % cosmicThemes.length;
+            localStorage.setItem('md_theme_idx', String(currentCosmicThemeIdx));
+            applyCosmicThemeVisuals();
+            showToast(`Theme synced: ${cosmicThemes[currentCosmicThemeIdx].name}`, 'fa-palette text-neon-cyan');
+        }
+
+        function openVaultSettings() {
+            showModal('Vault Settings', 'Choose a unified wallpaper theme, manage API keys, or switch to Travel Studio.', 'Wallpaper Themes', () => openUnifiedThemeSelector(), 'API Settings', () => openApiSettings());
+        }
+
+        function openVaultProfile() {
+            showModal('Vault Profile & Sync', `<div class="space-y-2 text-xs"><p><i class="fa-solid fa-link text-neon-cyan mr-2"></i><b>Linked App:</b> WanderSync Travel Planner</p><p><i class="fa-solid fa-images text-neon-pink mr-2"></i><b>Stored Memories:</b> ${memoryGalleryItems.length} visuals</p><p><i class="fa-solid fa-folder text-neon-amber mr-2"></i><b>Folders:</b> ${syncedFoldersCount} active</p></div>`, 'Close');
+        }
+
+        function openMemorySearch() {
+            const html = `
+                <input id="memSearchInput" type="text" placeholder="Search memories by title or vibe..." oninput="runMemorySearch()" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white mb-3 focus:outline-none">
+                <div id="memSearchResults" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            `;
+            showModal('Search Vault', html, 'Close');
+            runMemorySearch();
+        }
+        function runMemorySearch() {
+            const q = (document.getElementById('memSearchInput')?.value || '').toLowerCase();
+            const matches = memoryGalleryItems.filter(m => m.title.toLowerCase().includes(q) || m.vibe.toLowerCase().includes(q));
+            const box = document.getElementById('memSearchResults');
+            if (!box) return;
+            box.innerHTML = matches.length ? matches.map(m => `
+                <div class="flex items-center gap-3 p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer" onclick="closeModal();openImmersive('${m.url}','${escapeHtml(m.title).replace(/'/g, "\\'")}')">
+                    <img src="${m.url}" class="w-10 h-10 rounded-lg object-cover">
+                    <div><p class="text-xs font-bold text-white">${escapeHtml(m.title)}</p><p class="text-[10px] text-neon-cyan">${escapeHtml(m.vibe)}</p></div>
+                </div>
+            `).join('') : `<p class="text-xs text-gray-400 text-center py-3">No matching memories found.</p>`;
+        }
+
+        function addPhotoToVaultGallery(title, vibe, url) {
+            memoryGalleryItems.unshift({ title, vibe, url });
+            document.getElementById('galleryCount').innerText = `${memoryGalleryItems.length} items`;
+            const subgrid = document.getElementById('gallery-subgrid');
+            if (subgrid) {
+                subgrid.insertAdjacentHTML('afterbegin', `
+                    <div class="relative rounded-3xl overflow-hidden h-36 cursor-pointer group" onclick="openImmersive('${url}', '${escapeHtml(title).replace(/'/g, "\\'")}')">
+                        <img src="${url}" alt="${escapeHtml(title)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                        <div class="absolute bottom-2 left-2 bg-black/55 backdrop-blur px-2 py-0.5 rounded-full text-[9px] text-white font-semibold">${escapeHtml(title.slice(0, 18))}</div>
+                    </div>
+                `);
+            }
+        }
+
+        function openCreateCustomFolder() {
+            showModal('Create Custom Folder', `
+                <input id="newFolderName" type="text" placeholder="Folder Name (e.g., Goa Anniversary)" class="w-full mb-3 p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white">
+                <input id="newFolderVibe" type="text" placeholder="Vibe Tag (e.g., Sunset Romance)" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white">
+            `, 'Create Folder', () => {
+                const name = document.getElementById('newFolderName').value.trim();
+                const vibe = document.getElementById('newFolderVibe').value.trim() || 'Custom Vibe';
+                if (!name) return;
+                document.getElementById('activeFolderTitle').innerText = name;
+                document.getElementById('activeFolderVibe').innerText = `Vibe: ${vibe}`;
+                syncedFoldersCount++;
+                document.getElementById('syncedTripCount').innerText = `${syncedFoldersCount} folders`;
+                document.getElementById('syncedTripsList').insertAdjacentHTML('afterbegin', `
+                    <div class="bg-white/5 rounded-xl p-3 flex justify-between items-center cursor-pointer hover:bg-white/10" onclick="openArchivedFolder('${escapeHtml(name).replace(/'/g, "\\'")}','${escapeHtml(vibe).replace(/'/g, "\\'")}')">
+                        <div><p class="text-xs font-bold text-white">${escapeHtml(name)}</p><p class="text-[10px] text-neon-amber">Vibe: ${escapeHtml(vibe)}</p></div>
+                        <i class="fa-solid fa-chevron-right text-xs text-neon-amber"></i>
+                    </div>
+                `);
+                showToast(`Folder "${name}" created!`, 'fa-folder-plus text-neon-amber');
+            }, 'Cancel');
+        }
+
+        function openFolderOptions() {
+            showModal('Folder Options', 'Export this folder as a scrapbook, run AI Storyteller, or rename it.', 'Rename Folder', () => openCreateCustomFolder(), 'Close');
+        }
+
+        /* Phase 7: AI Storyteller (Real Gemini + Podcast Audio Readout) */
+        async function triggerStoryteller() {
+            const folder = document.getElementById('activeFolderTitle').innerText;
+            const vibe = document.getElementById('activeFolderVibe').innerText;
+            showModal('AI Storyteller', `<div class="flex justify-center my-4"><span class="loader-dark"></span></div><p class="text-center text-xs text-gray-300">Weaving narrative for <b>${escapeHtml(folder)}</b>...</p>`, 'Cancel');
+            try {
+                const story = (await askGemini(`Write a poetic, heartfelt 3-sentence travel story about a memory folder titled "${folder}" (${vibe}). Plain text only.`)).replace(/[*#]/g, '').trim();
+                lastGeneratedStory = story;
+                showModal(
+                    '📖 AI Storybook Ready',
+                    `<p class="text-white italic leading-relaxed text-sm mb-4">"${escapeHtml(story)}"</p>
+                     <button type="button" onclick="playLingoAudio(lastGeneratedStory)" class="w-full py-2.5 rounded-xl bg-neon-cyan/20 text-neon-cyan font-bold text-xs hover:bg-neon-cyan hover:text-black transition"><i class="fa-solid fa-headphones mr-1.5"></i> Play 2-Min Audio Podcast</button>`,
+                    'Edit Narrative',
+                    () => openStoryEditor(),
+                    'Save to Vault'
+                );
+            } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        function openStoryEditor() {
+            showModal('[Custom Control] Edit Story', `
+                <textarea id="storyEditArea" rows="4" class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-xs text-white leading-relaxed">${escapeHtml(lastGeneratedStory)}</textarea>
+            `, 'Save Narrative', () => {
+                lastGeneratedStory = document.getElementById('storyEditArea').value.trim() || lastGeneratedStory;
+                showToast('Story narrative saved!', 'fa-pen-nib text-neon-cyan');
+            }, 'Cancel');
+        }
+
+        /* Phase 8: Smart Clean-up */
+        function triggerCleanup() {
+            showModal('Scanning Folder...', `<div class="flex justify-center my-4"><span class="loader-dark" style="border-top-color:#FE53BB"></span></div><p class="text-center text-xs text-gray-300">Detecting blurry & duplicate shots...</p>`, 'Cancel');
+            setTimeout(() => {
+                showModal('Scan Complete', 'AI isolated <b>2 blurry shots</b> and <b>1 duplicate</b> (saving 14.2 MB). Review them before permanent deletion?', 'Review Trashes', () => openReviewTrashes(), 'Later');
+            }, 1300);
+        }
+
+        function openReviewTrashes() {
+            const html = `
+                <div class="space-y-2.5 text-xs">
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <span>IMG_4021.jpg <span class="text-rose-400">(Motion Blur)</span></span>
+                        <button onclick="this.parentElement.remove();showToast('Restored photo!')" class="text-neon-cyan font-bold">Keep</button>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <span>IMG_4022.jpg <span class="text-amber-400">(Duplicate)</span></span>
+                        <button onclick="this.parentElement.remove();showToast('Restored photo!')" class="text-neon-cyan font-bold">Keep</button>
+                    </div>
+                </div>
+            `;
+            showModal('[Custom Control] AI Trash Bin', html, 'Empty Trash', () => showToast('Cleaned 14.2 MB storage!', 'fa-broom text-neon-pink'), 'Close');
+        }
+
+        /* Physical Scrapbook PDF Print Export */
+        function exportScrapbook() {
+            const folder = document.getElementById('activeFolderTitle').innerText;
+            const previewHTML = `
+                <div class="bg-white text-slate-900 rounded-2xl p-4 shadow-xl text-left">
+                    <p class="text-[9px] uppercase tracking-widest text-rose-500 font-bold">Photobook Preview</p>
+                    <h4 class="font-display text-lg font-bold mb-2">${escapeHtml(folder)}</h4>
+                    <div class="grid grid-cols-3 gap-1.5 mb-3">
+                        ${memoryGalleryItems.slice(0, 3).map(m => `<img src="${m.url}" class="w-full h-16 object-cover rounded-lg">`).join('')}
+                    </div>
+                    <p class="text-[11px] italic text-slate-600">"${escapeHtml(lastGeneratedStory.slice(0, 110))}..."</p>
+                </div>
+            `;
+            showModal('Physical Scrapbook Ready', previewHTML, 'Print / Save PDF', () => {
+                const win = window.open('', '_blank');
+                if (win) {
+                    win.document.write(`<html><head><title>${escapeHtml(folder)} Scrapbook</title><style>body{font-family:sans-serif;padding:40px;max-width:700px;margin:auto;color:#1e293b}img{width:100%;height:260px;object-fit:cover;border-radius:14px;margin:14px 0}</style></head><body><h1>${escapeHtml(folder)}</h1><p><i>${escapeHtml(lastGeneratedStory)}</i></p>${memoryGalleryItems.map(m => `<h3>${escapeHtml(m.title)}</h3><img src="${m.url}">`).join('')}</body></html>`);
+                    win.document.close();
+                    win.print();
+                } else showToast('Popup blocked — enable popups to print PDF');
+            }, 'Close');
+        }
+
+        /* Add Memory -> ImgBB + SheetDB */
+        function updateMemoryFileName(input) {
+            const el = document.getElementById('fileNameDisplay');
+            el.innerHTML = (input.files && input.files[0])
+                ? `<span class="text-white font-bold"><i class="fa-solid fa-check text-neon-cyan mr-1"></i>${escapeHtml(input.files[0].name)}</span>`
+                : `<i class="fa-solid fa-cloud-arrow-up mr-2 text-neon-amber"></i>Tap to select image`;
+        }
+
+        async function saveMemoryToVault() {
+            const btn = document.getElementById('submitMemoryBtn');
+            const status = document.getElementById('statusMessage');
+            const title = document.getElementById('memoryTitle').value.trim();
+            const date = document.getElementById('memoryDate').value;
+            const vibe = document.getElementById('memoryVibe').value;
+            const fileInput = document.getElementById('memoryPhoto');
+
+            if (!fileInput.files || !fileInput.files[0]) return showModal("Missing Photo", "Please select an image first.", "OK");
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="loader"></span>`;
+            status.className = "p-3 rounded-xl text-xs font-bold text-center block glass-dark border-neon-cyan/50 text-neon-cyan";
+            status.innerText = "Uploading visual to ImgBB...";
+
+            try {
+                const fd = new FormData();
+                fd.append("image", fileInput.files[0]);
+                const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: fd });
+                const imgData = await imgRes.json();
+                if (!imgData.success) throw new Error("ImgBB upload failed");
+
+                const photoUrl = imgData.data.url;
+                status.className = "p-3 rounded-xl text-xs font-bold text-center block glass-dark border-neon-pink/50 text-neon-pink";
+                status.innerText = "Saving encrypted log to SheetDB...";
+
+                const sheetRes = await fetch(MEMORY_SHEETDB_URL, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [{ Title: title, Date: date, Vibe: vibe, PhotoURL: photoUrl }] })
+                });
+                if (!sheetRes.ok) throw new Error("SheetDB save failed");
+
+                addPhotoToVaultGallery(title, vibe, photoUrl);
+                document.getElementById('addMemoryForm').reset();
+                updateMemoryFileName({ files: [] });
+                status.classList.add('hidden');
+
+                showModal(
+                    "Memory Saved! ✨",
+                    "Uploaded to ImgBB & saved to your Excel sheet. Want to edit it in AI Studio now?",
+                    "Edit in AI Studio",
+                    () => {
+                        document.getElementById('studioPreviewImg').src = photoUrl;
+                        resetStudioFilters();
+                        switchMemoryTab('studio');
+                    },
+                    "Go to Gallery",
+                    () => switchMemoryTab('gallery')
+                );
+            } catch (err) {
+                status.className = "p-3 rounded-xl text-xs font-bold text-center block glass-dark border-red-500/50 text-red-400";
+                status.innerText = `Error: ${err.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Initiate Upload Sequence</span>`;
+            }
+        }
+
+        /* AI Creative Studio Controls */
+        function switchStudioMode(mode) {
+            ['magic', 'reel', 'manual'].forEach(m => {
+                document.getElementById(`studio-panel-${m}`).classList.toggle('hidden', m !== mode);
+                const tabId = m === 'magic' ? 'tab-ai-magic' : m === 'reel' ? 'tab-auto-reel' : 'tab-pro-manual';
+                const tab = document.getElementById(tabId);
+                tab.className = m === mode
+                    ? "flex-1 py-2 rounded-xl bg-white/15 text-white text-xs font-bold"
+                    : "flex-1 py-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition";
+            });
+        }
+
+        function loadStudioLocalImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('studioPreviewImg').src = e.target.result;
+                    resetStudioFilters();
+                    showToast('Photo injected into AI Studio!');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function applyPresetPrompt(text) {
+            document.getElementById('studioPrompt').value = text;
+            triggerAIStudio();
+        }
+
+        function applyManualSliders() {
+            const b = document.getElementById('slBright').value;
+            const c = document.getElementById('slContrast').value;
+            const s = document.getElementById('slSat').value;
+            document.getElementById('valBright').innerText = `${b}%`;
+            document.getElementById('valContrast').innerText = `${c}%`;
+            document.getElementById('valSat').innerText = `${s}%`;
+            document.getElementById('studioPreviewImg').style.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+        }
+
+        function resetStudioFilters() {
+            const img = document.getElementById('studioPreviewImg');
+            if (img) img.style.filter = 'none';
+            document.getElementById('slBright').value = 100;
+            document.getElementById('slContrast').value = 100;
+            document.getElementById('slSat').value = 100;
+            document.getElementById('valBright').innerText = '100%';
+            document.getElementById('valContrast').innerText = '100%';
+            document.getElementById('valSat').innerText = '100%';
+            showToast('Studio filters reset');
+        }
+
+        async function triggerAIStudio() {
+            const promptVal = document.getElementById('studioPrompt').value.trim();
+            if (!promptVal) return showModal("Missing Prompt", "Enter an editing prompt first!", "OK");
+
+            showModal('Synthesizing...', `<div class="flex justify-center my-4"><span class="loader-dark" style="border-top-color:#FE53BB"></span></div><p class="text-center text-xs text-gray-300">Applying Generative AI transformation...</p>`, 'Cancel');
+
+            try {
+                const desc = (await askGemini(`As an AI photo editor, describe creatively in 2 short sentences how you transformed a travel photo with the prompt: "${promptVal}". Plain text only.`)).replace(/[*#]/g, '').trim();
+                const img = document.getElementById('studioPreviewImg');
+                const lower = promptVal.toLowerCase();
+                if (lower.includes('cyber') || lower.includes('neon')) img.style.filter = 'hue-rotate(250deg) saturate(210%) contrast(125%)';
+                else if (lower.includes('vintage') || lower.includes('film')) img.style.filter = 'sepia(55%) contrast(110%) brightness(95%)';
+                else if (lower.includes('snow') || lower.includes('dream')) img.style.filter = 'brightness(118%) contrast(92%) saturate(135%) hue-rotate(175deg)';
+                else img.style.filter = `hue-rotate(${Math.floor(Math.random() * 320)}deg) saturate(180%) contrast(115%)`;
+
+                showModal('✨ Synthesis Complete', `<div class="bg-white/5 p-3.5 rounded-xl border border-neon-pink/35 mb-2"><p class="text-neon-pink text-xs font-bold mb-1">Gemini Visual Engine:</p><p class="text-white text-xs leading-relaxed">${escapeHtml(desc)}</p></div><p class="text-[10px] text-neon-cyan">Live CSS color grading applied to your studio preview!</p>`, 'Awesome!');
+            } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        /* Immersive AR Screen + Live Soundscape Synth + Stars */
+        function openImmersive(imgSrc, caption = 'Spatial Memory') {
+            document.getElementById('immersive-img').src = imgSrc;
+            document.getElementById('immersiveCaption').innerText = caption;
+            const el = document.getElementById('screen-immersive');
+            el.style.display = 'flex';
+            el.classList.remove('hidden');
+        }
+
+        function closeImmersive() {
+            stopSoundscape();
+            const el = document.getElementById('screen-immersive');
+            el.style.display = 'none';
+            el.classList.add('hidden');
+        }
+
+        function toggleSoundscape() {
+            if (soundscapePlaying) {
+                stopSoundscape();
+            } else {
+                soundscapePlaying = true;
+                document.getElementById('soundscapeIcon').className = 'fa-solid fa-pause text-neon-cyan text-xs mr-2';
+                document.getElementById('soundscapeLabel').innerText = 'Playing Ambient...';
+                document.querySelectorAll('.sound-bar').forEach(b => b.classList.remove('paused'));
+                // Gentle Web Audio ambient tone
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    soundscapeAudioCtx = new AudioCtx();
+                    const osc = soundscapeAudioCtx.createOscillator();
+                    const gain = soundscapeAudioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 196;
+                    gain.gain.value = 0.03;
+                    osc.connect(gain);
+                    gain.connect(soundscapeAudioCtx.destination);
+                    osc.start();
+                } catch (e) {}
+            }
+        }
+
+        function stopSoundscape() {
+            soundscapePlaying = false;
+            document.getElementById('soundscapeIcon').className = 'fa-solid fa-play text-white text-xs mr-2';
+            document.getElementById('soundscapeLabel').innerText = 'Live Soundscape';
+            document.querySelectorAll('.sound-bar').forEach(b => b.classList.add('paused'));
+            if (soundscapeAudioCtx) { try { soundscapeAudioCtx.close(); } catch (e) {} soundscapeAudioCtx = null; }
+        }
+
+        function launchARMemoryDrop() {
+            showModal('AR Spatial Engine', 'Camera & GPS Anchor locked! Floating holographic photo rendered at original capture coordinates.<br><br><span class="text-neon-cyan text-xs"><i class="fa-solid fa-location-crosshairs mr-1"></i>Precision: 0.4m AR Depth Lock</span>', 'Got it');
+        }
+
+        function openDropHiddenMemory() {
+            showModal('[Custom Control] Hidden AR Drop', `<input id="hiddenNote" type="text" placeholder="Secret message for your partner..." class="w-full p-3 rounded-xl border border-white/15 bg-white/5 text-sm text-white">`, 'Encrypt at GPS', () => {
+                const msg = document.getElementById('hiddenNote').value.trim();
+                if (msg) showToast('Hidden AR note dropped at your GPS!', 'fa-lock text-neon-amber');
+            }, 'Cancel');
+        }
+
+        function rateStars(containerId, rating, label) {
+            const stars = document.querySelectorAll(`#${containerId} i`);
+            stars.forEach((s, idx) => {
+                if (idx < rating) {
+                    s.classList.add('text-neon-amber');
+                    s.classList.remove('text-gray-500');
+                } else {
+                    s.classList.remove('text-neon-amber');
+                    s.classList.add('text-gray-500');
+                }
+            });
+            showToast(`Rated ${label}: ${rating}/5 Stars!`, 'fa-star text-neon-amber');
+        }
+
+        /* ==================== 9. INTERACTIVE AMBIENT CANVAS GRAPHICS ==================== */
+        (function initInteractiveCanvas() {
+            const canvas = document.getElementById('bgGraphicsCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width = 0, height = 0, t = 0;
+            const pointer = { x: 0.5, y: 0.5 };
+
+            // Star particles for Memory Vault mode
+            const stars = Array.from({ length: 42 }, () => ({
+                x: Math.random(),
+                y: Math.random(),
+                r: Math.random() * 1.6 + 0.4,
+                speed: Math.random() * 0.0005 + 0.0002,
+                phase: Math.random() * Math.PI * 2,
+                hue: Math.random() > 0.5 ? '#00F5FF' : '#FF2E93'
+            }));
+
+            function resizeCanvas() {
+                const parent = canvas.parentElement;
+                width = canvas.width = parent.clientWidth;
+                height = canvas.height = parent.clientHeight;
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('mousemove', (e) => {
+                pointer.x = e.clientX / Math.max(window.innerWidth, 1);
+                pointer.y = e.clientY / Math.max(window.innerHeight, 1);
+            });
+
+            function drawTravelGraphics() {
+                ctx.clearRect(0, 0, width, height);
+                // Same twinkling cosmic starfield + subtle neon expedition horizon waves
+                stars.forEach((s) => {
+                    s.y -= s.speed;
+                    if (s.y < -0.05) { s.y = 1.05; s.x = Math.random(); }
+                    const px = (s.x + (pointer.x - 0.5) * 0.03) * width;
+                    const py = (s.y + (pointer.y - 0.5) * 0.03) * height;
+                    const alpha = 0.22 + 0.55 * Math.abs(Math.sin(t * 0.025 + s.phase));
+                    ctx.beginPath();
+                    ctx.arc(px, py, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = s.hue;
+                    ctx.globalAlpha = alpha;
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    const baseY = height * (0.24 + i * 0.18);
+                    ctx.strokeStyle = i % 2 === 0 ? 'rgba(0, 245, 255, 0.07)' : 'rgba(255, 46, 147, 0.06)';
+                    for (let x = 0; x <= width; x += 14) {
+                        const wave = Math.sin(x * 0.012 + t * 0.014 + i) * 14 + Math.cos(x * 0.006 - t * 0.01) * 8;
+                        const parallax = (pointer.y - 0.5) * (i + 1) * 4;
+                        const y = baseY + wave + parallax;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            function drawMemoryGraphics() {
+                ctx.clearRect(0, 0, width, height);
+                // Twinkling constellation particles with gentle parallax
+                stars.forEach((s) => {
+                    s.y -= s.speed;
+                    if (s.y < -0.05) { s.y = 1.05; s.x = Math.random(); }
+                    const px = (s.x + (pointer.x - 0.5) * 0.03) * width;
+                    const py = (s.y + (pointer.y - 0.5) * 0.03) * height;
+                    const alpha = 0.25 + 0.65 * Math.abs(Math.sin(t * 0.025 + s.phase));
+                    ctx.beginPath();
+                    ctx.arc(px, py, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = s.hue;
+                    ctx.globalAlpha = alpha;
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            function animateBg() {
+                t++;
+                drawMemoryGraphics();
+                requestAnimationFrame(animateBg);
+            }
+
+            window.addEventListener('load', () => {
+                applyCosmicThemeVisuals();
+                resizeCanvas();
+                animateBg();
+            });
+            applyCosmicThemeVisuals();
+            resizeCanvas();
+        })();
+    </script>
+</body>
+</html>
