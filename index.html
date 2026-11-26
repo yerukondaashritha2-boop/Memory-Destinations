@@ -797,13 +797,21 @@
                 <i class="fa-solid fa-shield-heart text-xl mr-2.5 animate-pulse"></i> Smart Safety & SOS Alert
             </button>
 
-            <!-- Local Cultural Connect -->
-            <div class="holo-card rounded-3xl p-4 mb-3.5 border-l-4 border-l-neon-amber cursor-pointer" onclick="fetchCulturalEvents()">
-                <div class="flex justify-between items-center mb-1">
+            <!-- Local Cultural Connect + Festival Calendar Trip Planner -->
+            <div class="holo-card rounded-3xl p-4 mb-3.5 border-l-4 border-l-neon-amber">
+                <div class="flex justify-between items-center mb-1.5">
                     <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-masks-theater text-neon-amber mr-2"></i>Cultural Connect</h3>
-                    <span class="font-mono text-[9px] font-bold bg-neon-amber/15 text-neon-amber px-2.5 py-0.5 rounded-full">AI LIVE</span>
+                    <span class="font-mono text-[9px] font-bold bg-neon-amber/15 text-neon-amber px-2.5 py-0.5 rounded-full">CALENDAR + AI</span>
                 </div>
-                <p class="text-[11px] text-gray-400 font-medium">Discover local festivals, fairs & night markets on your dates.</p>
+                <p class="text-[11px] text-gray-400 font-medium mb-3">Plan trips around Telugu, Indian & Global calendar festivals or discover live local events.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openFestivalCalendarPlanner()" class="tactile-btn bg-gradient-to-r from-neon-amber to-orange-500 text-cosmic-900 font-bold py-2.5 px-2 rounded-xl text-[11px] flex items-center justify-center shadow-md shadow-amber-500/20">
+                        <i class="fa-solid fa-calendar-days mr-1.5"></i> Festival Trips
+                    </button>
+                    <button type="button" onclick="fetchCulturalEvents()" class="tactile-btn bg-white/10 text-neon-amber border border-neon-amber/35 hover:bg-neon-amber/15 font-bold py-2.5 px-2 rounded-xl text-[11px] flex items-center justify-center transition">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Local Events
+                    </button>
+                </div>
             </div>
 
             <!-- AI Packing Guide -->
@@ -1331,8 +1339,7 @@
             travelSheet: "https://sheetdb.io/api/v1/xxmv0yrm8dra5",
             memorySheet: "https://sheetdb.io/api/v1/pg4luv13emc9s"
         };
-
-        let GEMINI_API_KEY = localStorage.getItem('md_gemini_key') || DEFAULT_CONFIG.gemini;
+        let GEMINI_API_KEY = (localStorage.getItem('md_gemini_key') || DEFAULT_CONFIG.gemini).replace(/[\s'"]+/g, '');
         let IMGBB_API_KEY = localStorage.getItem('md_imgbb_key') || DEFAULT_CONFIG.imgbb;
         let TRAVEL_SHEETDB_URL = localStorage.getItem('md_travel_sheet') || DEFAULT_CONFIG.travelSheet;
         let MEMORY_SHEETDB_URL = localStorage.getItem('md_memory_sheet') || DEFAULT_CONFIG.memorySheet;
@@ -1346,6 +1353,7 @@
             'gemini-3.5-flash-lite'
         ];
         let activeGeminiModel = localStorage.getItem('md_gemini_model') || null;
+        let activeGeminiGateway = localStorage.getItem('md_gemini_gateway') || null;
 
         // Shared App State
         let currentAppMode = 'travel';
@@ -1500,35 +1508,58 @@
         }
 
         /* ==================== 4. REAL-TIME GEMINI AI ENGINE ==================== */
-        async function fetchGeminiEndpoint(modelName, promptText) {
-            const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        function sanitizeApiKey(rawKey) {
+            return String(rawKey || '').replace(/[\s'"]+/g, '').trim();
+        }
+
+        async function fetchGeminiEndpoint(modelName, promptText, gateway = 'studio') {
+            const cleanKey = sanitizeApiKey(GEMINI_API_KEY);
+            const baseUrl = gateway === 'vertex'
+                ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${modelName}:generateContent`
+                : `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
             const payload = JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] });
 
+            // Attempt 1: Official x-goog-api-key header (required for modern AQ. keys)
+            let headerResult = null;
             try {
                 const res = await fetch(baseUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanKey },
                     body: payload
                 });
-                return { ok: res.ok, status: res.status, data: await res.json() };
+                headerResult = { ok: res.ok, status: res.status, data: await res.json() };
+                if (headerResult.ok) return headerResult;
             } catch (e) {
-                const res = await fetch(`${baseUrl}?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+                headerResult = null;
+            }
+
+            // Attempt 2: Query parameter fallback (?key=...) if header preflight or auth format fails
+            try {
+                const res = await fetch(`${baseUrl}?key=${encodeURIComponent(cleanKey)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: payload
                 });
-                return { ok: res.ok, status: res.status, data: await res.json() };
-            }
+                const queryResult = { ok: res.ok, status: res.status, data: await res.json() };
+                if (queryResult.ok || !headerResult) return queryResult;
+            } catch (e) {}
+
+            return headerResult || { ok: false, status: 0, data: { error: { message: 'Network error contacting Gemini.' } } };
         }
 
         async function discoverAvailableGeminiModels() {
+            const cleanKey = sanitizeApiKey(GEMINI_API_KEY);
             const listUrl = `https://generativelanguage.googleapis.com/v1beta/models`;
             let data;
             try {
-                const res = await fetch(listUrl, { headers: { 'x-goog-api-key': GEMINI_API_KEY } });
+                const res = await fetch(listUrl, { headers: { 'x-goog-api-key': cleanKey } });
                 data = await res.json();
+                if (data?.error) {
+                    const res2 = await fetch(`${listUrl}?key=${encodeURIComponent(cleanKey)}`);
+                    data = await res2.json();
+                }
             } catch (e) {
-                const res = await fetch(`${listUrl}?key=${encodeURIComponent(GEMINI_API_KEY)}`);
+                const res = await fetch(`${listUrl}?key=${encodeURIComponent(cleanKey)}`);
                 data = await res.json();
             }
             if (!data || data.error || !Array.isArray(data.models)) {
@@ -1541,53 +1572,74 @@
         }
 
         async function askGemini(promptText) {
+            GEMINI_API_KEY = sanitizeApiKey(GEMINI_API_KEY);
             if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("YOUR_GEMINI")) {
                 throw new Error("Missing Gemini API Key. Tap the Key icon in the top bar.");
             }
+
             const candidates = activeGeminiModel
                 ? [activeGeminiModel, ...PREFERRED_MODELS.filter(m => m !== activeGeminiModel)]
                 : [...PREFERRED_MODELS];
 
-            let lastErr = "Gemini connection failed.";
+            // Try both Google AI Studio and Vertex AI Express gateways (AQ. keys can belong to either)
+            const gatewaysToTry = activeGeminiGateway
+                ? [activeGeminiGateway, activeGeminiGateway === 'studio' ? 'vertex' : 'studio']
+                : (GEMINI_API_KEY.startsWith('AQ.') ? ['studio', 'vertex'] : ['studio']);
 
-            for (const model of candidates) {
-                try {
-                    const result = await fetchGeminiEndpoint(model, promptText);
-                    if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        activeGeminiModel = model;
-                        localStorage.setItem('md_gemini_model', model);
-                        updateAiStatusBadge(model, true);
-                        return result.data.candidates[0].content.parts[0].text;
-                    }
-                    if (result.data?.error) {
-                        lastErr = result.data.error.message || `HTTP ${result.status}`;
-                        if (result.status === 401 || result.status === 403) {
-                            throw new Error(`Auth Error (${result.status}): ${lastErr}`);
+            let lastErr = "Gemini connection failed.";
+            let authStatus = null;
+
+            for (const gateway of gatewaysToTry) {
+                for (const model of candidates) {
+                    try {
+                        const result = await fetchGeminiEndpoint(model, promptText, gateway);
+                        if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                            activeGeminiModel = model;
+                            activeGeminiGateway = gateway;
+                            localStorage.setItem('md_gemini_model', model);
+                            localStorage.setItem('md_gemini_gateway', gateway);
+                            updateAiStatusBadge(model, true);
+                            return result.data.candidates[0].content.parts[0].text;
                         }
+                        if (result.data?.error) {
+                            lastErr = result.data.error.message || `HTTP ${result.status}`;
+                            // If 401/403 on this gateway, switch immediately to try the next gateway
+                            if (result.status === 401 || result.status === 403 || lastErr.includes("API key not valid")) {
+                                authStatus = result.status;
+                                break;
+                            }
+                        }
+                    } catch (err) {
+                        lastErr = err.message;
                     }
-                } catch (err) {
-                    lastErr = err.message;
-                    if (lastErr.startsWith("Auth Error")) throw err;
                 }
             }
 
-            try {
-                const discovered = await discoverAvailableGeminiModels();
-                for (const model of discovered.slice(0, 4)) {
-                    if (candidates.includes(model)) continue;
-                    const result = await fetchGeminiEndpoint(model, promptText);
-                    if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        activeGeminiModel = model;
-                        localStorage.setItem('md_gemini_model', model);
-                        updateAiStatusBadge(model, true);
-                        return result.data.candidates[0].content.parts[0].text;
+            // Fallback: Auto-discover models on AI Studio if it was a model-not-found issue (not a bad key)
+            if (authStatus !== 401 && authStatus !== 403) {
+                try {
+                    const discovered = await discoverAvailableGeminiModels();
+                    for (const model of discovered.slice(0, 4)) {
+                        if (candidates.includes(model)) continue;
+                        const result = await fetchGeminiEndpoint(model, promptText, 'studio');
+                        if (result.ok && result.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                            activeGeminiModel = model;
+                            activeGeminiGateway = 'studio';
+                            localStorage.setItem('md_gemini_model', model);
+                            localStorage.setItem('md_gemini_gateway', 'studio');
+                            updateAiStatusBadge(model, true);
+                            return result.data.candidates[0].content.parts[0].text;
+                        }
                     }
+                } catch (dErr) {
+                    lastErr = dErr.message || lastErr;
                 }
-            } catch (dErr) {
-                lastErr = dErr.message || lastErr;
             }
 
             updateAiStatusBadge("API Error", false);
+            if (authStatus === 401 || authStatus === 403) {
+                throw new Error(`Auth Error (${authStatus}): ${lastErr}`);
+            }
             throw new Error(lastErr);
         }
 
@@ -1606,7 +1658,7 @@
             showModal(
                 '<span class="text-brand-rose"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Gemini API Notice</span>',
                 `<div class="bg-rose-500/10 border border-rose-400/30 rounded-xl p-3 text-xs font-medium mb-3 break-words">${escapeHtml(errMsg)}</div>
-                 <p class="text-xs opacity-75">Open <b>API Settings</b> to test your key or enter a fresh Google AI Studio key.</p>`,
+                 <p class="text-xs opacity-80 leading-relaxed">మీ పాత Gemini API Key ఎక్స్‌పైర్ లేదా బ్లాక్ అయ్యి ఉండవచ్చు. <a href="https://aistudio.google.com/api-keys" target="_blank" class="text-neon-cyan underline font-bold">aistudio.google.com/api-keys</a> లో కొత్త కీ క్రియేట్ చేసి <b>API Settings</b> లో పేస్ట్ చేయండి.</p>`,
                 'Open API Settings',
                 () => openApiSettings(),
                 'Close'
@@ -1620,8 +1672,11 @@
             const html = `
                 <div class="space-y-2.5 text-left">
                     <div>
-                        <label class="block text-[10px] font-bold uppercase opacity-60 mb-1">Google Gemini API Key</label>
-                        <input id="cfgGemini" type="text" value="${escapeHtml(GEMINI_API_KEY)}" class="${inputCls}">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[10px] font-bold uppercase opacity-60">Google Gemini API Key</label>
+                            <a href="https://aistudio.google.com/api-keys" target="_blank" class="text-[10px] font-bold text-neon-cyan hover:underline">Get New Key ↗</a>
+                        </div>
+                        <input id="cfgGemini" type="text" value="${escapeHtml(GEMINI_API_KEY)}" placeholder="Paste fresh AIza... or AQ.... key" class="${inputCls}">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold uppercase opacity-60 mb-1">ImgBB API Key (Shared)</label>
@@ -1642,30 +1697,34 @@
                 </div>
             `;
             showModal('Ecosystem API Settings', html, 'Save All Keys', () => {
-                GEMINI_API_KEY = document.getElementById('cfgGemini').value.trim();
+                GEMINI_API_KEY = sanitizeApiKey(document.getElementById('cfgGemini').value);
                 IMGBB_API_KEY = document.getElementById('cfgImgbb').value.trim();
                 TRAVEL_SHEETDB_URL = document.getElementById('cfgTravelSheet').value.trim();
                 MEMORY_SHEETDB_URL = document.getElementById('cfgMemorySheet').value.trim();
                 activeGeminiModel = null;
+                activeGeminiGateway = null;
                 localStorage.setItem('md_gemini_key', GEMINI_API_KEY);
                 localStorage.setItem('md_imgbb_key', IMGBB_API_KEY);
                 localStorage.setItem('md_travel_sheet', TRAVEL_SHEETDB_URL);
                 localStorage.setItem('md_memory_sheet', MEMORY_SHEETDB_URL);
                 localStorage.removeItem('md_gemini_model');
+                localStorage.removeItem('md_gemini_gateway');
                 showToast('All API keys updated!');
             }, 'Cancel');
         }
 
         async function testGeminiConnection() {
-            GEMINI_API_KEY = document.getElementById('cfgGemini').value.trim();
+            GEMINI_API_KEY = sanitizeApiKey(document.getElementById('cfgGemini').value);
             activeGeminiModel = null;
+            activeGeminiGateway = null;
             const el = document.getElementById('testConnStatus');
             el.className = "text-[11px] font-bold text-center text-brand-sky";
-            el.innerHTML = `<span class="loader mr-1 align-middle"></span> Testing active models...`;
+            el.innerHTML = `<span class="loader mr-1 align-middle"></span> Testing AI Studio & Vertex gateways...`;
             try {
                 const res = await askGemini('Reply only with: Connection OK');
+                localStorage.setItem('md_gemini_key', GEMINI_API_KEY);
                 el.className = "text-[11px] font-bold text-center text-emerald-500";
-                el.innerText = `Connected via ${activeGeminiModel} ("${res.trim()}")`;
+                el.innerText = `Connected (${activeGeminiGateway}) via ${activeGeminiModel} ("${res.trim()}")`;
             } catch (err) {
                 el.className = "text-[11px] font-bold text-center text-brand-rose";
                 el.innerText = err.message;
@@ -2117,6 +2176,167 @@
                     showToast('Added event to timeline!');
                 }, "Close");
             } catch (err) { showApiErrorModal(err.message); }
+        }
+
+        // ==================== FESTIVAL CALENDAR TRIP PLANNER (TELUGU / INDIAN / GLOBAL) ====================
+        const festivalCalendars = {
+            telugu: [
+                { name: 'Sankranti (సంక్రాంతి)', window: 'Jan · 3-4 Days', dest: 'Konaseema & Araku Valley, AP', highlight: 'Kite flying, Haridasu songs, village feasts & misty valleys' },
+                { name: 'Maha Shivaratri (మహా శివరాత్రి)', window: 'Feb/Mar · Weekend', dest: 'Srisailam, Andhra Pradesh', highlight: 'Sacred night darshan, Nallamala forest drive & Krishna river views' },
+                { name: 'Ugadi (ఉగాది)', window: 'Mar/Apr · Festive Break', dest: 'Tirupati & Hampi', highlight: 'New Year sunrise temples, Ugadi Pachadi & heritage ruins' },
+                { name: 'Bonalu (బోనాలు)', window: 'Jul · Cultural Weekend', dest: 'Hyderabad (Golconda & Old City)', highlight: 'Folk drum processions, temple lights & traditional Telangana feast' },
+                { name: 'Bathukamma & Dasara (బతుకమ్మ & దసరా)', window: 'Oct · 4-Day Break', dest: 'Warangal & Vijayawada', highlight: 'Floral Bathukamma dances, Thousand Pillar Temple & Indrakeeladri lights' },
+                { name: 'Karthika Masam & Diwali (దీపావళి)', window: 'Nov · Sacred Getaway', dest: 'Rajahmundry & Papi Hills', highlight: 'Godavari river cruise, Deepotsavam lamps & riverside camping' }
+            ],
+            indian: [
+                { name: 'Holi Festival', window: 'Mar · 3-Day Break', dest: 'Pushkar & Jaipur, Rajasthan', highlight: 'Vibrant colors, folk music & heritage desert forts' },
+                { name: 'Onam Harvest Fest', window: 'Aug/Sep · 4-Day Break', dest: 'Alleppey & Munnar, Kerala', highlight: 'Vallam Kali snake boat races, Pookalam & grand Onam Sadya' },
+                { name: 'Ganesh Chaturthi', window: 'Sep · Weekend Trip', dest: 'Mumbai & Lonavala, Maharashtra', highlight: 'Grand pandal artistry, coastal drives & monsoon hills' },
+                { name: 'Durga Puja', window: 'Oct · 5-Day Break', dest: 'Kolkata, West Bengal', highlight: 'Illuminated heritage pandals, dhak beats & iconic street food' }
+            ],
+            global: [
+                { name: 'Christmas & Winter', window: 'Dec · 4-Day Holiday', dest: 'Goa & Shillong', highlight: 'Beach carnivals, midnight carols & cozy pine-hill cafes' },
+                { name: 'New Year Countdown', window: 'Dec/Jan · 3-Day Escape', dest: 'Gokarna or Dubai', highlight: 'Starlit beach bonfires, skyline fireworks & fresh beginnings' },
+                { name: 'Sakura Cherry Blossom', window: 'Apr · Spring Trip', dest: 'Kyoto, Japan', highlight: 'Pink blossom tunnels, serene shrines & traditional tea houses' },
+                { name: 'Songkran Water Fest', window: 'Apr · 4-Day Adventure', dest: 'Chiang Mai, Thailand', highlight: 'Citywide water celebrations, temple visits & night markets' }
+            ]
+        };
+
+        let activeFestivalCalendar = 'telugu';
+
+        function renderFestivalCalendarHTML() {
+            const tabs = [
+                { key: 'telugu', label: '🪔 తెలుగు' },
+                { key: 'indian', label: '🇮🇳 Indian' },
+                { key: 'global', label: '🌍 Global' }
+            ];
+            const items = festivalCalendars[activeFestivalCalendar] || festivalCalendars.telugu;
+
+            const tabButtons = tabs.map(t => `
+                <button type="button" onclick="switchFestivalCalendar('${t.key}')" class="flex-1 py-2 rounded-xl text-[11px] font-bold transition ${activeFestivalCalendar === t.key ? 'bg-gradient-to-r from-neon-amber to-orange-500 text-cosmic-900 shadow' : 'bg-white/5 text-gray-300 hover:bg-white/10'}">
+                    ${t.label}
+                </button>
+            `).join('');
+
+            const cards = items.map((f, idx) => `
+                <div class="bg-white/5 border border-white/10 hover:border-neon-amber/40 rounded-2xl p-3 transition text-left">
+                    <div class="flex justify-between items-start gap-2 mb-1">
+                        <h4 class="text-xs font-bold text-white leading-snug">${escapeHtml(f.name)}</h4>
+                        <span class="font-mono text-[9px] bg-neon-amber/15 text-neon-amber px-2 py-0.5 rounded-full shrink-0">${escapeHtml(f.window)}</span>
+                    </div>
+                    <p class="text-[10px] text-neon-cyan font-semibold mb-1"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(f.dest)}</p>
+                    <p class="text-[10px] text-gray-400 leading-relaxed mb-2.5">${escapeHtml(f.highlight)}</p>
+                    <button type="button" onclick="planPresetFestival('${activeFestivalCalendar}', ${idx})" class="tactile-btn w-full bg-neon-cyan/15 hover:bg-neon-cyan hover:text-cosmic-900 text-neon-cyan border border-neon-cyan/35 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center">
+                        <i class="fa-solid fa-route mr-1.5"></i> Plan Festival Trip with AI
+                    </button>
+                </div>
+            `).join('');
+
+            return `
+                <div class="space-y-3">
+                    <div class="flex gap-1.5 p-1 bg-black/40 rounded-2xl border border-white/10">${tabButtons}</div>
+                    <div class="flex gap-1.5">
+                        <input id="customFestivalInput" type="text" placeholder="Any festival? (e.g., Rama Navami, Eid)" class="flex-1 bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neon-amber">
+                        <button type="button" onclick="planCustomFestivalTrip()" class="tactile-btn bg-neon-amber text-cosmic-900 font-bold px-3 py-2 rounded-xl text-xs shrink-0">Plan</button>
+                    </div>
+                    <div class="space-y-2.5 max-h-64 overflow-y-auto hide-scroll pr-0.5">${cards}</div>
+                </div>
+            `;
+        }
+
+        function openFestivalCalendarPlanner() {
+            showModal('Festival Calendar Trips', renderFestivalCalendarHTML(), 'Close');
+        }
+
+        function switchFestivalCalendar(calKey) {
+            activeFestivalCalendar = calKey;
+            const msgBox = document.getElementById('modalMessage');
+            if (msgBox) msgBox.innerHTML = renderFestivalCalendarHTML();
+        }
+
+        function planPresetFestival(calKey, idx) {
+            const fest = festivalCalendars[calKey]?.[idx];
+            if (!fest) return;
+            closeModal();
+            generateFestivalAITrip(fest.name, fest.dest);
+        }
+
+        function planCustomFestivalTrip() {
+            const customFest = document.getElementById('customFestivalInput')?.value.trim();
+            if (!customFest) {
+                showToast('Enter any festival name first!', 'fa-circle-exclamation text-neon-amber');
+                return;
+            }
+            const userDest = document.getElementById('destInput').value.trim();
+            closeModal();
+            generateFestivalAITrip(customFest, userDest);
+        }
+
+        async function generateFestivalAITrip(festivalName, suggestedDest) {
+            // Switch to Travel Planner screen and pre-fill destination & Culture vibe
+            switchTravelTab('plan');
+            const destField = document.getElementById('destInput');
+            if (suggestedDest) destField.value = suggestedDest;
+            document.getElementById('vibeInput').value = 'Culture';
+
+            const destLabel = suggestedDest || "Best Iconic Destination";
+            const budget = document.getElementById('budgetInput').value;
+            const btn = document.getElementById('generateTripBtn');
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="loader mr-2 border-t-white"></span> Planning ${escapeHtml(festivalName.split('(')[0].trim())}...`;
+            showToast(`Designing ${festivalName.split('(')[0].trim()} trip...`, 'fa-calendar-days text-neon-amber');
+
+            try {
+                const prompt = `Act as an expert Indian & global travel planner. Plan a special festival trip for celebrating "${festivalName}" at ${destLabel} with a ${budget} budget. Return exactly 4 concise lines: 1) Best Spot & Festival Timing, 2) Morning Ritual/Sightseeing, 3) Afternoon Traditional Food & Market, 4) Evening Festival Celebration, with approximate costs. Plain text only, no markdown stars.`;
+                generatedTripData = await askGemini(prompt);
+
+                const contentDiv = document.getElementById('itineraryContent');
+                contentDiv.innerHTML = `
+                    <div class="mb-3 -ml-4 px-3 py-2 rounded-xl bg-neon-amber/15 border border-neon-amber/35 flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-neon-amber"><i class="fa-solid fa-calendar-days mr-1.5"></i>${escapeHtml(festivalName)} Special</span>
+                        <span class="font-mono text-[9px] text-white/75 uppercase">Festival Mode</span>
+                    </div>
+                `;
+
+                const lines = generatedTripData.split('\n').map(l => l.replace(/[*#•\-]/g, '').trim()).filter(Boolean);
+                const dotCls = ['bg-neon-amber', 'bg-neon-cyan', 'bg-neon-pink', 'bg-emerald-400'];
+
+                lines.forEach((line, i) => {
+                    contentDiv.innerHTML += `
+                        <div class="relative mt-3.5">
+                            <div class="absolute -left-[23px] top-1.5 w-3 h-3 ${dotCls[i % dotCls.length]} rounded-full border-2 border-cosmic-900 shadow-sm"></div>
+                            <p class="text-sm font-medium text-gray-200 leading-relaxed">${escapeHtml(line)}</p>
+                        </div>`;
+                });
+
+                const outBox = document.getElementById('aiOutputBox');
+                outBox.classList.remove('hidden');
+                outBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Sync festival trip stops directly into Live Execution timeline
+                const times = ['FESTIVAL PICK', '09:00 AM · MORNING', '01:30 PM · FEAST', '06:30 PM · CELEBRATION'];
+                document.getElementById('liveTimeline').innerHTML = lines.map((line, i) => `
+                    <div class="relative">
+                        <div class="absolute ${i === 1 ? '-left-[23px] w-4 h-4 bg-neon-amber border-[3px] animate-pulse shadow-[0_0_12px_rgba(255,209,102,0.85)]' : '-left-[21px] w-3 h-3 bg-neon-cyan border-2'} rounded-full border-cosmic-900"></div>
+                        <p class="font-mono text-[10px] font-bold ${i === 1 ? 'text-neon-amber bg-neon-amber/15 inline-block px-2.5 py-0.5 rounded-full' : 'text-gray-400'}">${times[i] || 'FESTIVAL STOP'}</p>
+                        <div class="${i === 1 ? 'holo-card border-l-4 border-l-neon-amber' : 'glass-dark'} p-4 rounded-2xl mt-1.5">
+                            <p class="text-sm font-bold text-white">${escapeHtml(line)}</p>
+                        </div>
+                    </div>
+                `).join('');
+
+                btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> Festival Plan Ready!`;
+                showToast(`Festival trip ready & synced to Live Execution!`, 'fa-sparkles text-neon-amber');
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> Generate AI Itinerary`;
+                }, 2200);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> Generate AI Itinerary`;
+                showApiErrorModal(err.message);
+            }
         }
 
         async function fetchPackingList() {
