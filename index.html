@@ -140,14 +140,7 @@
         }
 
         /* ==================== PREMIUM GRAPHIC SURFACES ==================== */
-        .glass-light {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 100%);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-        }
-
+        .glass-light,
         .glass-dark {
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 100%);
             backdrop-filter: blur(22px);
@@ -156,7 +149,6 @@
             box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
         }
 
-        /* Boarding Pass Ticket Card with Real Cutout Notches */
         .ticket-card {
             position: relative;
             background: linear-gradient(135deg, #FF6B4A 0%, #F43F5E 52%, #C026D3 100%);
@@ -176,7 +168,6 @@
         .ticket-card::before { left: -9px; }
         .ticket-card::after { right: -9px; }
 
-        /* Tactile 3D Button & Shimmer Sweep */
         .tactile-btn {
             position: relative;
             overflow: hidden;
@@ -195,7 +186,6 @@
         }
         .tactile-btn:hover::after { left: 135%; }
 
-        /* Holographic Animated Border Card (Memory Mode) */
         .holo-card {
             position: relative;
             background: linear-gradient(155deg, rgba(20, 24, 48, 0.85), rgba(10, 12, 26, 0.92));
@@ -209,7 +199,6 @@
             box-shadow: 0 20px 42px -12px rgba(255, 46, 147, 0.28);
         }
 
-        /* Polaroid / Film Frame Card */
         .film-frame {
             border: 1px solid rgba(255, 255, 255, 0.16);
             box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.7);
@@ -220,7 +209,6 @@
             box-shadow: 0 22px 42px -12px rgba(0, 245, 255, 0.26);
         }
 
-        /* Animated Radar Scanner Graphic */
         .radar-ring {
             position: relative;
             width: 58px;
@@ -433,21 +421,232 @@
             43% { opacity: 0; transform: scale(1.1); }
         }
 
+        /* ==================== UPGRADED 3D TIME-TRAVEL GLOBE & 3D PHOTO VIEW ==================== */
+        .globe-modal-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+        .globe-instructions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            color: rgba(226, 232, 240, 0.8);
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .globe-rotate-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .globe-rotate-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #00F5FF;
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid rgba(0, 245, 255, 0.28);
+            transition: 0.2s ease;
+            cursor: pointer;
+        }
+        .globe-rotate-btn:hover {
+            background: rgba(0, 245, 255, 0.22);
+            transform: translateY(-1px);
+        }
+        .time-globe-stage {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 248px;
+            padding: 8px 0;
+            perspective: 960px;
+            background: radial-gradient(ellipse at 50% 48%, rgba(0, 245, 255, 0.14), transparent 65%);
+            overflow: hidden;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 245, 255, 0.16);
+        }
+        .time-globe-orbit {
+            position: absolute;
+            width: 278px;
+            height: 98px;
+            border: 1px dashed rgba(0, 245, 255, 0.26);
+            border-radius: 50%;
+            transform: rotate(-16deg);
+            pointer-events: none;
+        }
         .globe-wrapper {
-            width: 170px; height: 170px; border-radius: 50%;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/600px-Blue_Marble_2002.png');
-            background-size: 340px 170px;
-            box-shadow: inset -24px -24px 44px rgba(0,0,0,0.6), 0 0 38px rgba(0,245,255,0.34);
-            animation: spinGlobe 12s linear infinite;
-            margin: 0 auto; position: relative;
+            width: 218px;
+            height: 218px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/600px-Blue_Marble_2002.png');
+            background-size: 436px 218px;
+            background-position: 0 0;
+            background-repeat: repeat-x;
+            box-shadow: inset -24px -22px 38px rgba(0, 0, 0, 0.72),
+                        inset 8px 8px 22px rgba(255, 255, 255, 0.18),
+                        0 0 42px rgba(0, 245, 255, 0.28);
+            border: 1.5px solid rgba(0, 245, 255, 0.5);
+            margin: 0 auto;
+            position: relative;
+            overflow: visible;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            transform-style: preserve-3d;
         }
-        @keyframes spinGlobe { from { background-position: 0 0; } to { background-position: 340px 0; } }
-        .globe-pin {
-            position: absolute; width: 14px; height: 14px; background: #FF2E93;
-            border-radius: 50%; border: 2px solid white;
-            box-shadow: 0 0 14px #FF2E93; cursor: pointer; transition: transform 0.2s;
+        .globe-wrapper.is-dragging {
+            cursor: grabbing;
+            box-shadow: inset -24px -22px 38px rgba(0, 0, 0, 0.72), 0 0 54px rgba(255, 46, 147, 0.45);
         }
-        .globe-pin:hover { transform: scale(1.45); }
+        .globe-sphere-clip {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .globe-sphere-clip::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.22), transparent 34%),
+                        linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent 35%, transparent 68%, rgba(0, 0, 0, 0.42));
+        }
+
+        /* 3D Floating Photo Visuals Appearing on the Globe as You Rotate */
+        .globe-photo-pin {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            padding: 2px;
+            border-radius: 14px;
+            border: 2px solid #00F5FF;
+            background: rgba(8, 12, 26, 0.96);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.72), 0 0 16px rgba(0, 245, 255, 0.65);
+            transform: translate(-50%, -50%) perspective(520px) rotateY(var(--tilt-y, 0deg)) rotateX(var(--tilt-x, 0deg));
+            cursor: pointer;
+            transition: transform 0.16s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .globe-photo-pin img {
+            width: 100%;
+            height: 100%;
+            border-radius: 11px;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+        }
+        .globe-photo-pin:hover,
+        .globe-photo-pin.selected {
+            border-color: #FF2E93;
+            box-shadow: 0 12px 26px rgba(255, 46, 147, 0.7), 0 0 22px rgba(255, 46, 147, 0.85);
+        }
+        .globe-photo-pin-count {
+            position: absolute;
+            right: -6px;
+            bottom: -5px;
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #FF2E93;
+            border: 1.5px solid #FFFFFF;
+            color: #FFFFFF;
+            font: 700 9px 'JetBrains Mono', monospace;
+        }
+
+        .globe-location-chips {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 2px 1px 4px;
+        }
+        .globe-place-chip {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            color: #CBD5E1;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .globe-place-chip.active {
+            color: #00F5FF;
+            background: rgba(0, 245, 255, 0.14);
+            border-color: rgba(0, 245, 255, 0.55);
+        }
+
+        /* Trip Photos & 3D Photo Cards Below the Globe */
+        .globe-memory-panel {
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 245, 255, 0.24);
+            background: linear-gradient(145deg, rgba(0, 245, 255, 0.08), rgba(255, 46, 147, 0.05));
+        }
+        .globe-memory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            perspective: 760px;
+        }
+        .globe-memory-card {
+            min-width: 0;
+            overflow: hidden;
+            border-radius: 13px;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transform: perspective(650px) rotateX(8deg) rotateY(var(--card-tilt, 0deg));
+            transform-style: preserve-3d;
+            transition: transform 0.22s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        .globe-memory-card:hover {
+            transform: perspective(650px) rotateX(0deg) rotateY(0deg) translateY(-3px) scale(1.03);
+            border-color: #00F5FF;
+            box-shadow: 0 12px 24px rgba(0, 245, 255, 0.26);
+        }
+        .globe-memory-card img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            display: block;
+        }
+        .globe-memory-card span {
+            display: block;
+            padding: 6px 7px;
+            color: #FFFFFF;
+            font-size: 9px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .globe-empty-state {
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            color: #94A3B8;
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 10px;
+            line-height: 1.5;
+        }
 
         /* Toast Banner */
         #toastBanner {
@@ -1095,6 +1294,11 @@
                     <input type="text" id="memoryTitle" required placeholder="Ex: Midnight beach walk" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl px-4 py-3.5 text-sm text-white placeholder-gray-500">
                 </div>
 
+                <div>
+                    <label class="block font-mono text-[10px] font-bold text-neon-pink uppercase tracking-widest mb-1.5">Trip Place / Location</label>
+                    <input type="text" id="memoryLocation" required placeholder="Ex: Kyoto, Japan" class="w-full bg-white/5 neon-input border border-white/15 rounded-2xl px-4 py-3.5 text-sm text-white placeholder-gray-500">
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-mono text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Date</label>
@@ -1411,11 +1615,15 @@
         let soundscapePlaying = false;
         let syncedFoldersCount = 1;
 
-        // Gallery Items Registry (Supports Live Search & Scrapbook Export)
+        // Gallery Items Registry with Trip Locations so rotating to a place shows all pictures taken there
         const memoryGalleryItems = [
-            { title: 'Misty Backwaters', vibe: 'Rainy Adventure', url: 'https://images.unsplash.com/photo-1518182170546-0766de606acb?auto=format&fit=crop&w=800&q=80' },
-            { title: 'Emerald Tea Hills', vibe: 'Adventure', url: 'https://images.unsplash.com/photo-1506461883276-594543d0e225?auto=format&fit=crop&w=800&q=80' },
-            { title: 'Houseboat Sunset', vibe: 'Romantic', url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80' }
+            { title: 'Misty Backwaters', vibe: 'Rainy Adventure', location: 'Kerala, India', date: '2026-07-14', url: 'https://images.unsplash.com/photo-1518182170546-0766de606acb?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Emerald Tea Hills', vibe: 'Adventure', location: 'Kerala, India', date: '2026-07-15', url: 'https://images.unsplash.com/photo-1506461883276-594543d0e225?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Houseboat Sunset', vibe: 'Romantic', location: 'Kerala, India', date: '2026-07-16', url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Arashiyama Bamboo Walk', vibe: 'Culture', location: 'Kyoto, Japan', date: '2026-04-08', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Fushimi Inari Gates', vibe: 'Adventure', location: 'Kyoto, Japan', date: '2026-04-09', url: 'https://images.unsplash.com/photo-1478436127897-76129b6e5c92?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Ubud Rice Terrace', vibe: 'Relaxing', location: 'Bali, Indonesia', date: '2026-05-21', url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80' },
+            { title: 'Oia Cliff Sunset', vibe: 'Romantic', location: 'Santorini, Greece', date: '2026-08-11', url: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80' }
         ];
 
         // Poll Options
@@ -1542,8 +1750,17 @@
 
         function escapeHtml(str) {
             const div = document.createElement('div');
-            div.textContent = str;
+            div.textContent = String(str ?? '');
             return div.innerHTML;
+        }
+
+        function escapeGlobeAttr(val) {
+            return String(val ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
         }
 
         /* ==================== 4. REAL-TIME GEMINI AI ENGINE (BOTH TRAVEL & MEMORY) ==================== */
@@ -1556,10 +1773,8 @@
             const baseUrl = gateway === 'vertex'
                 ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${modelName}:generateContent`
                 : `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-            // Include role: 'user' so both Vertex AI Express (AQ. key) & AI Studio endpoints work cleanly in browser/GitHub Pages
             const payload = JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }] });
 
-            // Vertex AI Express (AQ. keys): try ?key= first for clean browser/GitHub Pages CORS compatibility
             if (gateway === 'vertex') {
                 let queryResult = null;
                 try {
@@ -1587,7 +1802,6 @@
                 return queryResult || { ok: false, status: 0, data: { error: { message: 'Network error contacting Vertex Gemini.' } } };
             }
 
-            // Google AI Studio gateway: try x-goog-api-key header first, then ?key= fallback
             let headerResult = null;
             try {
                 const res = await fetch(baseUrl, {
@@ -1648,7 +1862,6 @@
                 ? [activeGeminiModel, ...PREFERRED_MODELS.filter(m => m !== activeGeminiModel)]
                 : [...PREFERRED_MODELS];
 
-            // Prioritize Vertex AI Express first for AQ. keys, with automatic fallback to Google AI Studio
             const gatewaysToTry = activeGeminiGateway
                 ? [activeGeminiGateway, activeGeminiGateway === 'vertex' ? 'studio' : 'vertex']
                 : (GEMINI_API_KEY.startsWith('AQ.') ? ['vertex', 'studio'] : ['studio', 'vertex']);
@@ -1681,7 +1894,6 @@
                 }
             }
 
-            // Fallback: Auto-discover models on AI Studio if it was a model-not-found issue
             if (authStatus !== 401 && authStatus !== 403) {
                 try {
                     const discovered = await discoverAvailableGeminiModels();
@@ -1945,7 +2157,6 @@
                 });
                 document.getElementById('aiOutputBox').classList.remove('hidden');
 
-                // Sync to Live Execution screen
                 const times = ['09:30 AM', '01:30 PM · LIVE NOW', '07:00 PM'];
                 document.getElementById('liveTimeline').innerHTML = lines.map((line, i) => `
                     <div class="relative">
@@ -2079,16 +2290,264 @@
             showToast('Victory! +1 Point added!', 'fa-trophy text-brand-mango');
         }
 
+        /* ==================== NEW 3D TIME-TRAVEL GLOBE (PHOTO VISUALS + TRIP MEMORIES + 1-CLICK) ==================== */
+        let timeGlobeLocations = [];
+        let timeGlobeRotation = 0;
+        let activeTimeGlobeLocationIndex = 0;
+
+        function getTimeGlobeCoordinates(locationName) {
+            const place = String(locationName || '').toLowerCase();
+            const coordsMap = [
+                { keys: ['kyoto'], lat: 35.0116, lng: 135.7681 },
+                { keys: ['tokyo', 'japan'], lat: 35.6762, lng: 139.6503 },
+                { keys: ['bali', 'indonesia'], lat: -8.4095, lng: 115.1889 },
+                { keys: ['kerala', 'kochi', 'munnar', 'alleppey', 'india'], lat: 10.1632, lng: 76.6413 },
+                { keys: ['hyderabad', 'telangana'], lat: 17.3850, lng: 78.4867 },
+                { keys: ['goa'], lat: 15.2993, lng: 74.1240 },
+                { keys: ['santorini', 'greece'], lat: 36.3932, lng: 25.4615 },
+                { keys: ['paris', 'france'], lat: 48.8566, lng: 2.3522 },
+                { keys: ['new york', 'usa'], lat: 40.7128, lng: -74.0060 }
+            ];
+            const found = coordsMap.find(item => item.keys.some(k => place.includes(k)));
+            return found ? { lat: found.lat, lng: found.lng } : null;
+        }
+
+        function buildTimeGlobeLocations() {
+            const grouped = new Map();
+            memoryGalleryItems.forEach((memory, memoryIndex) => {
+                const placeName = String(memory.location || '').trim() || 'Kerala, India';
+                const key = placeName.toLowerCase();
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        name: placeName,
+                        coordinates: getTimeGlobeCoordinates(placeName),
+                        photos: []
+                    });
+                }
+                grouped.get(key).photos.push({ memoryIndex, memory });
+            });
+            return Array.from(grouped.values());
+        }
+
         function showGlobe() {
+            timeGlobeLocations = buildTimeGlobeLocations();
+            activeTimeGlobeLocationIndex = Math.max(0, timeGlobeLocations.findIndex(loc => loc.coordinates));
+            const initial = timeGlobeLocations[activeTimeGlobeLocationIndex];
+            timeGlobeRotation = initial && initial.coordinates ? initial.coordinates.lng : 0;
+
             const html = `
-                <div class="globe-wrapper mb-4">
-                    <div class="globe-pin" style="top:30%;left:58%;" onclick="document.getElementById('pinInfo').innerHTML='📍 <b>Kyoto, Japan</b> (Past Memory)<br><button onclick=&quot;planDestinationFromGlobe(\\'Kyoto, Japan\\')&quot; class=&quot;mt-2 px-3 py-1 rounded-full bg-brand-ocean text-white text-[10px] font-bold&quot;>Re-Plan Trip →</button>'"></div>
-                    <div class="globe-pin" style="top:52%;left:26%;background:#2A9D8F;box-shadow:0 0 12px #2A9D8F;" onclick="document.getElementById('pinInfo').innerHTML='🎯 <b>Bali, Indonesia</b> (Future Bucket Goal)<br><button onclick=&quot;planDestinationFromGlobe(\\'Bali, Indonesia\\')&quot; class=&quot;mt-2 px-3 py-1 rounded-full bg-brand-ocean text-white text-[10px] font-bold&quot;>Plan Now in WanderSync →</button>'"></div>
-                    <div class="globe-pin" style="top:38%;left:44%;background:#FF9F1C;box-shadow:0 0 12px #FF9F1C;" onclick="document.getElementById('pinInfo').innerHTML='📍 <b>Kerala, India</b> (Vault Diary)<br><button onclick=&quot;closeModal();switchAppMode(\\'memory\\');switchMemoryTab(\\'gallery\\')&quot; class=&quot;mt-2 px-3 py-1 rounded-full bg-pink-500 text-white text-[10px] font-bold&quot;>Open in Memory Vault →</button>'"></div>
+                <div class="globe-modal-shell">
+                    <div class="globe-instructions">
+                        <span><i class="fa-solid fa-arrows-rotate text-neon-cyan mr-1"></i>Rotate globe to bring place photos into 3D view</span>
+                        <div class="globe-rotate-controls">
+                            <button type="button" class="globe-rotate-btn" title="Rotate Left" onclick="rotateTimeGlobe(-28)"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button type="button" class="globe-rotate-btn" title="Rotate Right" onclick="rotateTimeGlobe(28)"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="time-globe-stage">
+                        <div class="time-globe-orbit"></div>
+                        <div id="memoryGlobe3D" class="globe-wrapper" role="group" aria-label="3D Time-Travel Globe">
+                            <div class="globe-sphere-clip"></div>
+                            <div id="globePhotoPins"></div>
+                        </div>
+                    </div>
+
+                    <div id="globeLocationChips" class="globe-location-chips"></div>
+
+                    <div class="globe-memory-panel">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="font-mono text-[9px] uppercase tracking-widest text-neon-pink font-bold">TRIP PHOTOS & MEMORIES</p>
+                                <h4 id="globeSelectedPlace" class="font-cosmic text-base font-bold text-white truncate">Loading...</h4>
+                                <p id="globeSelectedMeta" class="text-[10px] text-gray-400"></p>
+                            </div>
+                            <button type="button" onclick="planCurrentGlobePlace()" class="shrink-0 text-[10px] font-bold px-3 py-2 rounded-xl bg-neon-cyan/15 border border-neon-cyan/35 text-neon-cyan hover:bg-neon-cyan hover:text-cosmic-900 transition">
+                                Plan Trip
+                            </button>
+                        </div>
+                        <div id="globeMemoryPhotos" class="globe-memory-grid"></div>
+                    </div>
                 </div>
-                <div id="pinInfo" class="text-xs text-center font-medium bg-slate-500/10 py-2.5 px-3 rounded-xl">Tap any glowing pin to jump between Planner & Vault!</div>
             `;
+
             showModal('3D Time-Travel Globe', html, 'Close');
+            renderTimeGlobeMarkers();
+            renderTimeGlobeLocationChips();
+            renderTimeGlobeMemoryPanel();
+            bindTimeGlobeDrag();
+        }
+
+        function syncNearestLocationToRotation() {
+            if (!timeGlobeLocations.length) return;
+            let bestIdx = activeTimeGlobeLocationIndex;
+            let smallestDiff = 42;
+
+            timeGlobeLocations.forEach((loc, idx) => {
+                if (!loc.coordinates) return;
+                const diff = Math.abs(((loc.coordinates.lng - timeGlobeRotation + 540) % 360) - 180);
+                if (diff < smallestDiff) {
+                    smallestDiff = diff;
+                    bestIdx = idx;
+                }
+            });
+
+            if (bestIdx !== activeTimeGlobeLocationIndex) {
+                activeTimeGlobeLocationIndex = bestIdx;
+                renderTimeGlobeLocationChips();
+                renderTimeGlobeMemoryPanel();
+            }
+        }
+
+        function rotateTimeGlobe(degrees) {
+            timeGlobeRotation = (timeGlobeRotation + degrees + 360) % 360;
+            syncNearestLocationToRotation();
+            renderTimeGlobeMarkers();
+        }
+
+        function renderTimeGlobeMarkers() {
+            const globe = document.getElementById('memoryGlobe3D');
+            const pinLayer = document.getElementById('globePhotoPins');
+            if (!globe || !pinLayer) return;
+
+            globe.style.backgroundPosition = `${(timeGlobeRotation / 360) * 436}px 0px`;
+
+            const pins = [];
+            timeGlobeLocations.forEach((loc, idx) => {
+                if (!loc.coordinates || !loc.photos.length) return;
+                const deltaDeg = ((loc.coordinates.lng - timeGlobeRotation + 540) % 360) - 180;
+                const angleRad = (deltaDeg * Math.PI) / 180;
+                const depth = Math.cos(angleRad);
+                if (depth <= 0.05) return;
+
+                const latRad = (loc.coordinates.lat * Math.PI) / 180;
+                const baseX = 50 + Math.sin(angleRad) * Math.cos(latRad) * 41;
+                const baseY = 50 - Math.sin(latRad) * Math.cos(angleRad) * 38;
+                const isFocused = idx === activeTimeGlobeLocationIndex;
+
+                // When rotated to a place, fan its trip photo visuals cleanly in 3D right on the globe
+                const visiblePhotos = isFocused ? loc.photos.slice(0, 3) : [loc.photos[0]];
+                visiblePhotos.forEach((entry, pIdx) => {
+                    const spreadOffset = visiblePhotos.length > 1 ? (pIdx - (visiblePhotos.length - 1) / 2) * 26 : 0;
+                    const xPct = Math.max(12, Math.min(88, baseX + spreadOffset));
+                    const yPct = Math.max(12, Math.min(88, baseY - (pIdx === 1 && isFocused ? 10 : 0)));
+                    const tiltY = Math.round(Math.sin(angleRad) * 28 + (pIdx - 1) * 10);
+                    const tiltX = isFocused ? -8 : 0;
+                    const sizePx = Math.round((isFocused ? 44 : 38) + depth * 10);
+
+                    pins.push(`
+                        <button type="button"
+                            class="globe-photo-pin ${isFocused ? 'selected' : ''}"
+                            style="left:${xPct.toFixed(2)}%;top:${yPct.toFixed(2)}%;width:${sizePx}px;height:${sizePx}px;--tilt-y:${tiltY}deg;--tilt-x:${tiltX}deg;z-index:${Math.round(5 + depth * 6 + (isFocused ? 2 : 0))};"
+                            title="${escapeGlobeAttr(entry.memory.title)} · ${escapeGlobeAttr(loc.name)} (1-click memory)"
+                            onclick="event.stopPropagation(); selectTimeGlobeLocation(${idx}); openTimeGlobeMemory(${entry.memoryIndex});">
+                            <img src="${escapeGlobeAttr(entry.memory.url)}" alt="${escapeGlobeAttr(entry.memory.title)}">
+                            ${pIdx === 0 && loc.photos.length > 1 ? `<span class="globe-photo-pin-count">${loc.photos.length}</span>` : ''}
+                        </button>
+                    `);
+                });
+            });
+
+            pinLayer.innerHTML = pins.join('') || '<div class="globe-empty-state" style="position:absolute;inset:24px;display:flex;align-items:center;justify-content:center;">Drag or use arrows to rotate photos onto the globe</div>';
+        }
+
+        function renderTimeGlobeLocationChips() {
+            const chipLayer = document.getElementById('globeLocationChips');
+            if (!chipLayer) return;
+            chipLayer.innerHTML = timeGlobeLocations.map((loc, idx) => `
+                <button type="button" class="globe-place-chip ${idx === activeTimeGlobeLocationIndex ? 'active' : ''}" onclick="selectTimeGlobeLocation(${idx})">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>${escapeHtml(loc.name)}</span>
+                    <span class="text-neon-amber">${loc.photos.length}</span>
+                </button>
+            `).join('');
+        }
+
+        function renderTimeGlobeMemoryPanel() {
+            const titleEl = document.getElementById('globeSelectedPlace');
+            const metaEl = document.getElementById('globeSelectedMeta');
+            const gridEl = document.getElementById('globeMemoryPhotos');
+            const loc = timeGlobeLocations[activeTimeGlobeLocationIndex];
+            if (!titleEl || !metaEl || !gridEl) return;
+
+            if (!loc) {
+                titleEl.textContent = 'No Trip Photos Yet';
+                metaEl.textContent = 'Add a memory with a location to see it here';
+                gridEl.innerHTML = '<div class="globe-empty-state col-span-3">No memories saved yet.</div>';
+                return;
+            }
+
+            titleEl.textContent = loc.name;
+            metaEl.textContent = `${loc.photos.length} ${loc.photos.length === 1 ? 'photo' : 'photos'} from this trip · One click opens memory`;
+
+            gridEl.innerHTML = loc.photos.map((entry, idx) => {
+                const m = entry.memory;
+                const cardTilt = (idx - 1) * 7;
+                return `
+                    <button type="button" class="globe-memory-card" style="--card-tilt:${cardTilt}deg;" onclick="openTimeGlobeMemory(${entry.memoryIndex})" title="Open ${escapeGlobeAttr(m.title)}">
+                        <img src="${escapeGlobeAttr(m.url)}" alt="${escapeGlobeAttr(m.title)}">
+                        <span>${escapeHtml(m.title)}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectTimeGlobeLocation(idx) {
+            const loc = timeGlobeLocations[idx];
+            if (!loc) return;
+            activeTimeGlobeLocationIndex = idx;
+            if (loc.coordinates) timeGlobeRotation = loc.coordinates.lng;
+            renderTimeGlobeMarkers();
+            renderTimeGlobeLocationChips();
+            renderTimeGlobeMemoryPanel();
+        }
+
+        function openTimeGlobeMemory(memoryIndex) {
+            const mem = memoryGalleryItems[memoryIndex];
+            if (!mem || !mem.url) return;
+            closeModal();
+            const caption = [mem.title, mem.location, mem.date, mem.vibe].filter(Boolean).join(' · ');
+            openImmersive(mem.url, caption);
+        }
+
+        function planCurrentGlobePlace() {
+            const loc = timeGlobeLocations[activeTimeGlobeLocationIndex];
+            if (!loc) return;
+            closeModal();
+            switchAppMode('travel');
+            switchTravelTab('plan');
+            document.getElementById('destInput').value = loc.name;
+            showToast(`Destination set to ${loc.name}`);
+        }
+
+        function bindTimeGlobeDrag() {
+            const globe = document.getElementById('memoryGlobe3D');
+            if (!globe) return;
+            let dragging = false, startX = 0, startRot = 0;
+
+            globe.addEventListener('pointerdown', e => {
+                if (e.target.closest('.globe-photo-pin')) return;
+                dragging = true;
+                startX = e.clientX;
+                startRot = timeGlobeRotation;
+                globe.classList.add('is-dragging');
+                if (globe.setPointerCapture) globe.setPointerCapture(e.pointerId);
+            });
+
+            globe.addEventListener('pointermove', e => {
+                if (!dragging) return;
+                timeGlobeRotation = (startRot + (e.clientX - startX) * 0.75 + 3600) % 360;
+                syncNearestLocationToRotation();
+                renderTimeGlobeMarkers();
+            });
+
+            const stopDrag = () => {
+                dragging = false;
+                globe.classList.remove('is-dragging');
+            };
+            globe.addEventListener('pointerup', stopDrag);
+            globe.addEventListener('pointercancel', stopDrag);
+            globe.addEventListener('lostpointercapture', stopDrag);
         }
 
         async function generateBucketList() {
@@ -2143,12 +2602,12 @@
                     if (icon) icon.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
                 }
 
-                // BRIDGE: Auto-push proof photo into Memory Notebook Gallery
-                addPhotoToVaultGallery(taskTitle, "Adventure", url);
+                const tripPlace = document.getElementById('destInput')?.value.trim() || 'Kerala, India';
+                addPhotoToVaultGallery(taskTitle, "Adventure", url, tripPlace, new Date().toISOString().slice(0, 10));
 
                 showModal(
                     "Achievement Unlocked! 🏆",
-                    `<img src="${url}" class="w-full h-36 object-cover rounded-xl mb-3 shadow"><p class="text-xs text-center font-bold text-brand-leaf">Photo uploaded & automatically added to your Memory Vault!</p>`,
+                    `<img src="${url}" class="w-full h-36 object-cover rounded-xl mb-3 shadow"><p class="text-xs text-center font-bold text-brand-leaf">Photo uploaded & pinned to ${escapeHtml(tripPlace)} on the Globe!</p>`,
                     "View in Vault",
                     () => { switchAppMode('memory'); switchMemoryTab('gallery'); },
                     "Stay Here"
@@ -2246,7 +2705,6 @@
         // ==================== FESTIVAL CALENDAR TRIP PLANNER (LOCAL ALL LANGUAGES / INDIAN / WORLD) ====================
         const festivalCalendars = {
             telugu: [
-                // Telugu (తెలుగు)
                 { lang: 'telugu', langLabel: 'తెలుగు', name: 'Sankranti (సంక్రాంతి)', window: 'Jan · 3-4 Days', dest: 'Konaseema & Araku Valley, AP', highlight: 'Kite flying, Haridasu songs, village feasts & misty valleys' },
                 { lang: 'telugu', langLabel: 'తెలుగు', name: 'Maha Shivaratri (మహా శివరాత్రి)', window: 'Feb/Mar · Weekend', dest: 'Srisailam, Andhra Pradesh', highlight: 'Sacred night darshan, Nallamala forest drive & Krishna river views' },
                 { lang: 'telugu', langLabel: 'తెలుగు', name: 'Ugadi (ఉగాది)', window: 'Mar/Apr · Festive Break', dest: 'Tirupati & Hampi', highlight: 'New Year sunrise temples, Ugadi Pachadi & heritage ruins' },
@@ -2254,68 +2712,52 @@
                 { lang: 'telugu', langLabel: 'తెలుగు', name: 'Bonalu (బోనాలు)', window: 'Jul · Cultural Weekend', dest: 'Hyderabad (Golconda & Old City)', highlight: 'Folk drum processions, temple lights & traditional Telangana feast' },
                 { lang: 'telugu', langLabel: 'తెలుగు', name: 'Bathukamma & Dasara (బతుకమ్మ & దసరా)', window: 'Oct · 4-Day Break', dest: 'Warangal & Vijayawada', highlight: 'Floral Bathukamma dances, Thousand Pillar Temple & Indrakeeladri lights' },
                 { lang: 'telugu', langLabel: 'తెలుగు', name: 'Karthika Masam & Diwali (దీపావళి)', window: 'Nov · Sacred Getaway', dest: 'Rajahmundry & Papi Hills', highlight: 'Godavari river cruise, Deepotsavam lamps & riverside camping' },
-                // Tamil (தமிழ்)
                 { lang: 'tamil', langLabel: 'தமிழ்', name: 'Thai Pongal (பொங்கல்)', window: 'Jan · 4-Day Harvest', dest: 'Madurai & Thanjavur, TN', highlight: 'Jallikattu heritage, Kolam art, sugarcane feasts & Chola temples' },
                 { lang: 'tamil', langLabel: 'தமிழ்', name: 'Thaipusam (தைப்பூசம்)', window: 'Jan/Feb · Spiritual', dest: 'Palani & Rameswaram, TN', highlight: 'Hill temple Kavadi processions, sacred baths & coastal bridges' },
                 { lang: 'tamil', langLabel: 'தமிழ்', name: 'Puthandu & Chithirai Fest (தமிழ் புத்தாண்டு)', window: 'Apr · Cultural Grand', dest: 'Madurai Meenakshi Temple, TN', highlight: 'Tamil New Year celebrations, grand temple chariot & street music' },
                 { lang: 'tamil', langLabel: 'தமிழ்', name: 'Aadi Perukku (ஆடிப்பெருக்கு)', window: 'Aug · Monsoon River', dest: 'Kaveri Delta & Kumbakonam, TN', highlight: 'Monsoon river worship, traditional rice feasts & silk weaving towns' },
                 { lang: 'tamil', langLabel: 'தமிழ்', name: 'Karthigai Deepam (கார்த்திகை தீபம்)', window: 'Nov/Dec · Festival of Lights', dest: 'Tiruvannamalai, TN', highlight: 'Sacred Maha Deepam flame atop Arunachala Hill & Girivalam walk' },
-                // Kannada (ಕನ್ನಡ)
                 { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Mysuru Dasara (ಮೈಸೂರು ದಸರಾ)', window: 'Oct · 10-Day Royal', dest: 'Mysuru, Karnataka', highlight: '100,000 palace bulbs, Jamboo Savari royal parade & cultural concerts' },
                 { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Kannada Ugadi (ಯುಗಾದಿ)', window: 'Mar/Apr · New Year', dest: 'Hampi & Badami, Karnataka', highlight: 'Bevu-Bella new year ritual, UNESCO stone chariots & sunset boulders' },
                 { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Kambala & Karavali Fest (ಕಂಬಳ)', window: 'Nov-Feb · Coastal', dest: 'Mangaluru & Udupi, Karnataka', highlight: 'Traditional coastal buffalo races, Yakshagana folk drama & beaches' },
                 { lang: 'kannada', langLabel: 'ಕನ್ನಡ', name: 'Bengaluru Karaga (ಕರಗ)', window: 'Mar/Apr · Heritage Night', dest: 'Old Bengaluru & Coorg', highlight: 'Centuries-old midnight floral procession & coffee estate escape' },
-                // Malayalam (മലയാളം)
                 { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Onam (ഓണം)', window: 'Aug/Sep · 4-Day Harvest', dest: 'Alleppey & Munnar, Kerala', highlight: 'Vallam Kali snake boat races, floral Pookalam & grand 26-dish Sadya' },
                 { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Vishu (വിഷു)', window: 'Apr · New Year', dest: 'Kochi & Guruvayur, Kerala', highlight: 'Golden Vishukkani sunrise, fireworks & backwater village stays' },
                 { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Thrissur Pooram (തൃശ്ശൂർ പൂരം)', window: 'Apr/May · Mega Spectacle', dest: 'Thrissur & Athirappilly, Kerala', highlight: 'Iconic percussion orchestras, parasol displays & grand night fireworks' },
                 { lang: 'malayalam', langLabel: 'മലയാളം', name: 'Theyyam Season (തെയ്യം)', window: 'Dec-Mar · Mystic Folk', dest: 'Kannur & Wayanad, Kerala', highlight: 'Ancient sacred trance-dance rituals, cliff beaches & misty hills' },
-                // Hindi / North (हिन्दी)
                 { lang: 'hindi', langLabel: 'हिन्दी', name: 'Lathmar & Braj Holi (होली)', window: 'Mar · 3-Day Colors', dest: 'Mathura, Vrindavan & Jaipur', highlight: 'Flower Holi, folk songs, historic ghats & colorful palace streets' },
                 { lang: 'hindi', langLabel: 'हिन्दी', name: 'Dev Deepawali (देव दीपावली)', window: 'Nov · Million Lamps', dest: 'Varanasi, Uttar Pradesh', highlight: 'Millions of earthen diyas lighting 84 Ganga ghats & evening boat ride' },
                 { lang: 'hindi', langLabel: 'हिन्दी', name: 'Janmashtami (जन्माष्टमी)', window: 'Aug · Midnight Fest', dest: 'Dwarka & Mathura', highlight: 'Midnight temple chimes, Dahi Handi celebrations & festive bazaars' },
                 { lang: 'hindi', langLabel: 'हिन्दी', name: 'Maha Kumbh & Ganga Dussehra (गंगा दशहरा)', window: 'Jan / Jun · Sacred', dest: 'Prayagraj & Rishikesh', highlight: 'Grand river Aarti, sacred sunrise dips & Himalayan spiritual trails' },
-                // Marathi (मराठी)
                 { lang: 'marathi', langLabel: 'मराठी', name: 'Ganeshotsav (गणेशोत्सव)', window: 'Sep · 10-Day Grand', dest: 'Mumbai & Pune, Maharashtra', highlight: 'Artistic pandals, dhol-tasha beats, modak feasts & coastal parades' },
                 { lang: 'marathi', langLabel: 'मराठी', name: 'Gudi Padwa (गुढी पाडवा)', window: 'Mar/Apr · New Year', dest: 'Nashik & Lonavala, Maharashtra', highlight: 'Traditional Shobha Yatra rallies, Puran Poli & Sahyadri hill views' },
                 { lang: 'marathi', langLabel: 'मराठी', name: 'Ashadhi Wari (आषाढी वारी)', window: 'Jun/Jul · Monsoon Trek', dest: 'Pandharpur & Mahabaleshwar', highlight: 'Soulful Abhang chanting, lush Sahyadri waterfalls & heritage forts' },
-                // Bengali (বাংলা)
                 { lang: 'bengali', langLabel: 'বাংলা', name: 'Durga Puja (দুর্গা পূজা)', window: 'Oct · 5-Day UNESCO Fest', dest: 'Kolkata, West Bengal', highlight: 'Art-museum pandal hopping, dhak rhythms & midnight street food' },
                 { lang: 'bengali', langLabel: 'বাংলা', name: 'Pohela Boishakh (পহেলা বৈশাখ)', window: 'Apr · New Year', dest: 'Kolkata & Shantiniketan', highlight: 'Tagore melodies, cultural processions & authentic Bengali sweets' },
                 { lang: 'bengali', langLabel: 'বাংলা', name: 'Poush Mela (পৌষ মেলা)', window: 'Dec · Winter Folk', dest: 'Shantiniketan, West Bengal', highlight: 'Mystic Baul folk musicians, handmade crafts & rustic winter fairs' },
-                // Gujarati (ગુજરાતી)
                 { lang: 'gujarati', langLabel: 'ગુજરાતી', name: 'Navratri Garba (નવરાત્રી)', window: 'Oct · 9 Nights Dance', dest: 'Vadodara & Ahmedabad, Gujarat', highlight: 'Massive traditional Garba circles, mirror-work outfits & night snacks' },
                 { lang: 'gujarati', langLabel: 'ગુજરાતી', name: 'Uttarayan Kite Fest (ઉત્તરાયણ)', window: 'Jan · Sky Festival', dest: 'Ahmedabad & Kutch, Gujarat', highlight: 'International kite carnival, rooftop Undhiyu feasts & sky lanterns' },
                 { lang: 'gujarati', langLabel: 'ગુજરાતી', name: 'Rann Utsav (રણ ઉત્સવ)', window: 'Nov-Feb · White Desert', dest: 'Rann of Kutch, Gujarat', highlight: 'Full-moon white salt desert, luxury tents & Kutchi folk music' },
-                // Punjabi (ਪੰਜਾਬੀ)
                 { lang: 'punjabi', langLabel: 'ਪੰਜਾਬੀ', name: 'Baisakhi (ਵਿਸਾਖੀ)', window: 'Apr · Harvest Joy', dest: 'Amritsar, Punjab', highlight: 'Golden Temple illumination, energetic Bhangra & legendary langar' },
                 { lang: 'punjabi', langLabel: 'ਪੰਜਾਬੀ', name: 'Lohri & Gurpurab (ਲੋਹੜੀ)', window: 'Jan / Nov · Bonfire', dest: 'Amritsar & Chandigarh', highlight: 'Winter folk bonfires, Giddha dance, sarson saag & sacred kirtans' },
                 { lang: 'punjabi', langLabel: 'ਪੰਜਾਬੀ', name: 'Hola Mohalla (ਹੋਲਾ ਮਹੱਲਾ)', window: 'Mar · Martial Arts', dest: 'Anandpur Sahib, Punjab', highlight: 'Spectacular Gatka displays, horse riding & vibrant Sikh heritage fair' },
-                // Odia (ଓଡ଼ିଆ)
                 { lang: 'odia', langLabel: 'ଓଡ଼ିଆ', name: 'Puri Rath Yatra (ରଥଯାତ୍ରା)', window: 'Jun/Jul · Chariot Fest', dest: 'Puri & Konark, Odisha', highlight: 'Colossal wooden chariots, oceanfront beaches & Sun Temple architecture' },
                 { lang: 'odia', langLabel: 'ଓଡ଼ିଆ', name: 'Konark Dance Festival (କୋଣାର୍କ)', window: 'Dec · Classical Arts', dest: 'Konark & Chilika Lake, Odisha', highlight: 'Open-air Odissi dance by the Sun Temple & dolphin lagoon cruise' },
                 { lang: 'odia', langLabel: 'ଓଡ଼ିଆ', name: 'Nuakhai & Raja Parba (ନୂଆଖାଇ)', window: 'Jun / Sep · Harvest', dest: 'Sambalpur & Bhubaneswar, Odisha', highlight: 'Swing songs, traditional Pitha sweets & lush Eastern Ghats trails' },
-                // Assamese & North-East (অসমীয়া & NE)
                 { lang: 'northeast', langLabel: 'অসমীয়া / NE', name: 'Bohag Bihu (বহাগ বিহু)', window: 'Apr · Spring Fest', dest: 'Guwahati & Kaziranga, Assam', highlight: 'Joyful Bihu dance, Brahmaputra sunset cruises & rhino safaris' },
                 { lang: 'northeast', langLabel: 'NE / Nagaland', name: 'Hornbill Festival', window: 'Dec · 10-Day Tribal', dest: 'Kohima, Nagaland', highlight: 'Festival of Festivals showcasing 16 Naga tribes, rock nights & hills' },
                 { lang: 'northeast', langLabel: 'NE / Manipur', name: 'Sangai & Yaoshang Festival', window: 'Mar / Nov · Culture', dest: 'Imphal & Loktak Lake, Manipur', highlight: 'Floating lake islands, classical Ras Leela dance & folk sports' },
                 { lang: 'northeast', langLabel: 'NE / Arunachal', name: 'Losar & Ziro Music Fest', window: 'Feb / Sep · Mountain', dest: 'Tawang & Ziro Valley, Arunachal', highlight: 'Himalayan monastery dances, pine-valley indie music & tribal hospitality' },
-                // Urdu / Islamic (اردو / Eid)
                 { lang: 'urdu', langLabel: 'اردو / Eid', name: 'Eid-ul-Fitr / Ramzan (عید الفطر)', window: 'Lunar · Night Markets', dest: 'Hyderabad & Old Delhi', highlight: 'Charminar night bazaars, authentic Haleem, Sheer Kurma & festive lights' },
                 { lang: 'urdu', langLabel: 'اردو / Eid', name: 'Eid-ul-Adha & Ajmer Urs (عرس)', window: 'Lunar · Sufi Heritage', dest: 'Ajmer & Lucknow', highlight: 'Soulful Qawwali nights, Nawabi heritage walks & royal Awadhi cuisine' },
-                // Bhojpuri / Maithili (भोजपुरी / मैथिली)
                 { lang: 'bhojpuri', langLabel: 'भोजपुरी / मैथिली', name: 'Chhath Puja (छठ पूजा)', window: 'Oct/Nov · Sun Worship', dest: 'Patna, Gaya & Varanasi', highlight: 'Sacred dawn & dusk Arghya rituals, folk songs & Thekua delicacies' },
                 { lang: 'bhojpuri', langLabel: 'भोजपुरी / मैथिली', name: 'Sonepur Mela & Vivah Panchami', window: 'Nov/Dec · Grand Fair', dest: 'Sonepur & Janakpur', highlight: 'Asia’s oldest riverfront heritage fair, folk theatre & temple lights' },
-                // Rajasthani / Marwari (राजस्थानी)
                 { lang: 'rajasthani', langLabel: 'राजस्थानी', name: 'Gangaur & Teej (गणगौर / तीज)', window: 'Mar / Aug · Royal', dest: 'Jaipur & Udaipur, Rajasthan', highlight: 'Royal palace processions, Ghewar sweets, lakeside fireworks & folk dances' },
                 { lang: 'rajasthani', langLabel: 'राजस्थानी', name: 'Jaisalmer Desert Festival (मरु महोत्सव)', window: 'Feb · Golden Dunes', dest: 'Jaisalmer, Rajasthan', highlight: 'Sam sand dunes camel races, Kalbelia folk dance & starlit desert camps' },
-                // Konkani / Goan (कोंकणी)
                 { lang: 'konkani', langLabel: 'कोंकणी', name: 'Shigmo & Goa Carnival (शिगमो)', window: 'Feb/Mar · Coastal', dest: 'Panaji, Old Goa & South Goa', highlight: 'Vibrant street floats, Ghode Modni folk dance, samba music & beach feasts' },
                 { lang: 'konkani', langLabel: 'कोंकणी', name: 'Sao Joao Monsoon Fest', window: 'Jun · Monsoon Splash', dest: 'Siolim & North Goa', highlight: 'Floral crowns, traditional boat parades & lively Goan village feasts' },
-                // Kashmiri & Himalayan (کٲشُر / पहाड़ी)
                 { lang: 'kashmiri', langLabel: 'کٲشُر / Himalayan', name: 'Tulip Fest & Shikara Carnival', window: 'Apr · Spring Valley', dest: 'Srinagar & Pahalgam, Kashmir', highlight: 'Asia’s largest tulip garden in bloom, Dal Lake houseboats & Kahwa tea' },
                 { lang: 'kashmiri', langLabel: 'कश्मीरी / हिमालयी', name: 'Kullu Dussehra & Herath', window: 'Feb / Oct · Mountain', dest: 'Kullu-Manali & Srinagar', highlight: 'Mountain valley deity processions, Nati folk dances & snow-peak views' },
-                // Parsi, Jain, Buddhist & Christian
                 { lang: 'heritage', langLabel: 'Parsi / Jain / Buddhist', name: 'Navroz (Parsi New Year)', window: 'Mar / Aug · Heritage', dest: 'Mumbai & Udvada, Gujarat', highlight: 'Chalk-art courtyards, Irani cafés, Berry Pulao & colonial heritage walks' },
                 { lang: 'heritage', langLabel: 'Parsi / Jain / Buddhist', name: 'Mahavir Jayanti & Paryushan', window: 'Apr / Sep · Serene', dest: 'Palitana & Mount Abu', highlight: 'Marble hilltop temples, peaceful sunrise climbs & pure sattvik cuisine' },
                 { lang: 'heritage', langLabel: 'Parsi / Jain / Buddhist', name: 'Buddha Purnima & Saga Dawa', window: 'May · Lantern Peace', dest: 'Bodh Gaya, Sikkim & Ladakh', highlight: 'Butter-lamp monasteries, prayer flags & peaceful mountain retreats' },
@@ -2336,47 +2778,34 @@
                 { lang: 'east', langLabel: 'East & NE India', name: 'Hornbill & Cherry Blossom Fest', window: 'Nov / Dec · Hills', dest: 'Shillong & Kohima', highlight: 'Autumn pink cherry blossoms, Naga tribal showcase & misty waterfalls' }
             ],
             global: [
-                // Japanese (日本語)
                 { lang: 'japanese', langLabel: '🇯🇵 日本語 (Japanese)', name: 'Sakura Cherry Blossom (桜 / Hanami)', window: 'Mar/Apr · Spring', dest: 'Kyoto & Tokyo, Japan', highlight: 'Pink blossom tunnels, Hanami picnics, shrines & serene tea houses' },
                 { lang: 'japanese', langLabel: '🇯🇵 日本語 (Japanese)', name: 'Gion Matsuri & Sapporo Snow Fest', window: 'Jul / Feb · Iconic', dest: 'Kyoto & Sapporo, Japan', highlight: 'Towering lantern floats or giant illuminated ice sculptures in snow' },
-                // Chinese / Mandarin (中文)
                 { lang: 'chinese', langLabel: '🇨🇳 中文 (Chinese)', name: 'Lunar New Year & Lantern Fest (春节)', window: 'Jan/Feb · 7 Days', dest: 'Singapore, Taipei & Hong Kong', highlight: 'Dragon parades, glowing sky lanterns, fireworks & night street food' },
                 { lang: 'chinese', langLabel: '🇨🇳 中文 (Chinese)', name: 'Mid-Autumn Mooncake Fest (中秋节)', window: 'Sep/Oct · Full Moon', dest: 'Hong Kong & Beijing', highlight: 'Fire dragon dance, glowing paper lanterns & riverside moon viewing' },
-                // Korean (한국어)
                 { lang: 'korean', langLabel: '🇰🇷 한국어 (Korean)', name: 'Chuseok & Seoul Lantern Fest (추석)', window: 'Sep / Nov · Culture', dest: 'Seoul & Busan, South Korea', highlight: 'Hanbok palace tours, illuminated Cheonggyecheon stream & K-street food' },
                 { lang: 'korean', langLabel: '🇰🇷 한국어 (Korean)', name: 'Jinhae Gunhangje Cherry Blossom', window: 'Apr · Romance', dest: 'Jinhae & Jeju Island, Korea', highlight: 'Blossom-lined bridges, coastal volcanic trails & lively night markets' },
-                // Thai / Vietnamese / Indonesian (SE Asia)
                 { lang: 'seasia', langLabel: '🇹🇭 ไทย (Thai)', name: 'Songkran & Yi Peng Lanterns (สงกรานต์)', window: 'Apr / Nov · Magic', dest: 'Chiang Mai & Bangkok, Thailand', highlight: 'Citywide water celebrations or thousands of floating sky lanterns' },
                 { lang: 'seasia', langLabel: '🇮🇩 Bahasa (Indonesian)', name: 'Nyepi & Bali Spirit Festival', window: 'Mar/Apr · Wellness', dest: 'Ubud & Seminyak, Bali', highlight: 'Ogoh-Ogoh giant parades, Day of Silence stargazing & jungle yoga' },
                 { lang: 'seasia', langLabel: '🇻🇳 Tiếng Việt (Vietnamese)', name: 'Tết New Year & Hoi An Lanterns', window: 'Jan/Feb · Glowing', dest: 'Hoi An & Hanoi, Vietnam', highlight: 'Silk-lantern old town rivers, flower markets & Pho culinary walks' },
-                // Spanish (Español)
                 { lang: 'spanish', langLabel: '🇪🇸 Español (Spanish)', name: 'La Tomatina & Las Fallas', window: 'Aug / Mar · Fiesta', dest: 'Valencia & Buñol, Spain', highlight: 'Iconic tomato fight, towering artistic sculptures & Mediterranean tapas' },
                 { lang: 'spanish', langLabel: '🇲🇽 Español (Mexican)', name: 'Día de los Muertos', window: 'Nov · Heritage', dest: 'Oaxaca & Mexico City, Mexico', highlight: 'Marigold flower altars, candlelit parades, folk art & authentic tacos' },
                 { lang: 'spanish', langLabel: '🇵🇪 Español / Quechua', name: 'Inti Raymi (Festival of the Sun)', window: 'Jun · Ancient Inca', dest: 'Cusco & Machu Picchu, Peru', highlight: 'Andean solstice pageantry, mountain trains & cloud-forest ruins' },
-                // German (Deutsch)
                 { lang: 'german', langLabel: '🇩🇪 Deutsch (German)', name: 'Oktoberfest & Christmas Markets', window: 'Sep / Dec · Classic', dest: 'Munich & Bavaria, Germany', highlight: 'Bavarian brass bands, Alpine castles, fair rides & fairy-lit winter stalls' },
-                // Italian (Italiano)
                 { lang: 'italian', langLabel: '🇮🇹 Italiano (Italian)', name: 'Venice Carnival (Carnevale)', window: 'Feb · Masquerade', dest: 'Venice, Italy', highlight: 'Ornate Venetian masks, grand canal gondola parades & baroque balls' },
                 { lang: 'italian', langLabel: '🇮🇹 Italiano (Italian)', name: 'Palio di Siena & Infiorata', window: 'Jun / Jul · Tuscan', dest: 'Siena & Amalfi Coast, Italy', highlight: 'Historic piazza spectacles, flower-carpet streets & coastal gelato' },
-                // French (Français)
                 { lang: 'french', langLabel: '🇫🇷 Français (French)', name: 'Bastille Day & Nice Carnival', window: 'Jul / Feb · Riviera', dest: 'Paris & Nice, France', highlight: 'Eiffel Tower fireworks, Riviera flower parades & boulevard cafés' },
                 { lang: 'french', langLabel: '🇫🇷 Français (French)', name: 'Fête des Lumières (Festival of Lights)', window: 'Dec · Projections', dest: 'Lyon, France', highlight: 'Monumental light art across historic squares & gourmet French bistros' },
-                // Portuguese (Português)
                 { lang: 'portuguese', langLabel: '🇧🇷 Português (Brazilian)', name: 'Rio de Janeiro Carnival', window: 'Feb/Mar · 5 Days', dest: 'Rio de Janeiro, Brazil', highlight: 'Sambadrome parades, Copacabana beach rhythms & vibrant street blocos' },
                 { lang: 'portuguese', langLabel: '🇵🇹 Português (Portuguese)', name: 'Festas de Lisboa (Santo António)', window: 'Jun · Street Party', dest: 'Lisbon, Portugal', highlight: 'Alfama cobblestone street music, colorful bunting & oceanfront trams' },
-                // English (UK / USA / Ireland / Australia)
                 { lang: 'english', langLabel: '🇬🇧 English (UK / Scotland)', name: 'Edinburgh Fringe & Hogmanay', window: 'Aug / Dec · Arts', dest: 'Edinburgh, Scotland', highlight: 'World’s largest arts festival, historic castles & torchlight New Year' },
                 { lang: 'english', langLabel: '🇺🇸 English (USA)', name: 'Mardi Gras & Albuquerque Balloons', window: 'Feb / Oct · Iconic', dest: 'New Orleans & New Mexico, USA', highlight: 'Jazz street parades or 500 hot-air balloons rising at sunrise' },
                 { lang: 'english', langLabel: '🇮🇪 English / Irish', name: 'St. Patrick’s Festival', window: 'Mar · Emerald Isle', dest: 'Dublin & Galway, Ireland', highlight: 'Emerald city parades, lively folk music sessions & cliff coastal drives' },
                 { lang: 'english', langLabel: '🇦🇺 English (Oceania)', name: 'Vivid Sydney & Matariki', window: 'May/Jun · Lights', dest: 'Sydney & Queenstown, NZ', highlight: '3D Opera House light art, harbor cruises & Southern Alps stargazing' },
-                // Arabic, Persian & Turkish
                 { lang: 'arabic', langLabel: '🇦🇪 العربية (Arabic)', name: 'Dubai Shopping & New Year Fest', window: 'Dec/Jan · Luxury', dest: 'Dubai & Abu Dhabi, UAE', highlight: 'Burj Khalifa fireworks, desert safaris, global village & drone shows' },
                 { lang: 'arabic', langLabel: '🇲🇦 العربية (Moroccan)', name: 'Fes Sacred Music & Rose Festival', window: 'May/Jun · Exotic', dest: 'Fes & Marrakech, Morocco', highlight: 'Medina courtyard concerts, Sahara camel camps & lantern souks' },
                 { lang: 'arabic', langLabel: '🇮🇷 فارسی / 🇹🇷 Türkçe', name: 'Nowruz & Cappadocia Balloon Fest', window: 'Mar / Jul · Sky Magic', dest: 'Cappadocia & Istanbul, Turkey', highlight: 'Spring equinox feasts, fairy chimneys & sunrise hot-air balloons' },
-                // Nordic, Greek & Slavic
                 { lang: 'nordic', langLabel: '🇮🇸 🇸🇪 Nordic', name: 'Northern Lights & Midsummer Fest', window: 'Feb / Jun · Aurora', dest: 'Reykjavik & Stockholm', highlight: 'Dancing Aurora Borealis, geothermal lagoons or midnight-sun islands' },
                 { lang: 'nordic', langLabel: '🇬🇷 Ελληνικά (Greek)', name: 'Greek Easter & Athens Epidaurus', window: 'Apr / Jul · Aegean', dest: 'Santorini & Athens, Greece', highlight: 'Candlelit cliffside villages, ancient open-air theatre & turquoise coves' },
-                // African Languages (Swahili / Zulu / Amharic)
                 { lang: 'african', langLabel: '🇹🇿 🇿🇦 🇪🇹 African', name: 'Sauti za Busara & Timkat Fest', window: 'Jan / Feb · Rhythm', dest: 'Zanzibar & Cape Town', highlight: 'Swahili coastal music under spice-island stars, safaris & ocean views' }
             ]
         };
@@ -2437,13 +2866,12 @@
         let festivalSearchQuery = '';
         let currentDisplayedFestivals = [];
 
-        // ==================== FESTIVAL PRE-ALERT & 2-3 DAYS ADVANCE AUTO-PLAN ENGINE ====================
         const DEFAULT_FEST_ALERT_CFG = {
             enabled: true,
-            leadDays: 3, // Notify 2, 3, or 5 days before festival
-            actionMode: 'notify_and_plan', // 'notify_only' or 'notify_and_plan'
+            leadDays: 3,
+            actionMode: 'notify_and_plan',
             trackedNames: ['Sankranti (సంక్రాంతి)', 'Hornbill Festival', 'Christmas & Feast of St. Francis'],
-            customDates: [] // User-added exact date festival reminders: { name, date, dest }
+            customDates: []
         };
 
         let festivalAlertConfig = (() => {
@@ -2459,7 +2887,6 @@
             updateFestivalCountdownBanner();
         }
 
-        // Approximate annual month/day anchors for real-time countdowns across calendars
         const KNOWN_FESTIVAL_DATES = {
             'Sankranti (సంక్రాంతి)': [1, 14],
             'Thai Pongal (பொங்கல்)': [1, 14],
@@ -2558,7 +2985,6 @@
                 ...festivalCalendars.global
             ];
 
-            // Deduplicate by festival name
             const seen = new Set();
             const enriched = [];
             pool.forEach(f => {
@@ -2627,7 +3053,6 @@
                 : 'Just a heads-up so you do not miss the upcoming celebration!';
             const daysBadge = fest.daysLeft === 0 ? 'TODAY' : fest.daysLeft === 1 ? 'TOMORROW' : `IN ${fest.daysLeft} DAYS`;
 
-            // Try sending a real browser push notification if permission is granted
             try {
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification(`🎉 Upcoming Festival (${daysBadge}): ${fest.name}`, {
@@ -2687,7 +3112,6 @@
 
             return `
                 <div class="space-y-3 text-left">
-                    <!-- Master ON/OFF Toggle -->
                     <div class="bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
                         <div>
                             <p class="text-xs font-bold text-white">Advance Festival Pre-Alerts</p>
@@ -2698,13 +3122,11 @@
                         </button>
                     </div>
 
-                    <!-- Lead Time Selector (2 / 3 / 5 Days Before) -->
                     <div>
                         <p class="font-mono text-[9px] uppercase tracking-widest text-neon-cyan font-bold mb-1.5">Notify Me Before Festival</p>
                         <div class="flex gap-1.5">${leadBtns}</div>
                     </div>
 
-                    <!-- Mode: Notify Only vs Notify + Auto-Plan -->
                     <div>
                         <p class="font-mono text-[9px] uppercase tracking-widest text-neon-pink font-bold mb-1.5">When Alert Triggers</p>
                         <div class="grid grid-cols-2 gap-1.5">
@@ -2717,7 +3139,6 @@
                         </div>
                     </div>
 
-                    <!-- Add Exact Custom Festival Date Reminder -->
                     <div class="bg-black/35 border border-white/10 rounded-2xl p-3 space-y-2">
                         <p class="font-mono text-[9px] uppercase tracking-widest text-neon-amber font-bold"><i class="fa-solid fa-calendar-plus mr-1"></i>Pin Custom Festival Date</p>
                         <div class="grid grid-cols-2 gap-1.5">
@@ -2730,7 +3151,6 @@
                         </div>
                     </div>
 
-                    <!-- Upcoming Festivals Countdown List -->
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
                             <p class="font-mono text-[9px] uppercase tracking-widest text-gray-400 font-bold">Upcoming Festival Radar</p>
@@ -2739,7 +3159,6 @@
                         <div class="space-y-2 max-h-40 overflow-y-auto hide-scroll">${upcomingCards}</div>
                     </div>
 
-                    <!-- Live Preview / Test Button -->
                     <button type="button" onclick="previewFestivalPreAlertNow()" class="tactile-btn w-full py-2.5 rounded-xl bg-neon-pink/15 hover:bg-neon-pink text-neon-pink hover:text-white border border-neon-pink/40 font-bold text-xs transition flex items-center justify-center">
                         <i class="fa-solid fa-bolt mr-1.5"></i> Test ${cfg.leadDays}-Day Advance Alert Now
                     </button>
@@ -2856,13 +3275,11 @@
             const subOptions = festivalSubFilters[activeFestivalCalendar] || [];
             const q = festivalSearchQuery.trim().toLowerCase();
 
-            // Filter by selected language/region AND live search query across all festivals
             let filtered = selectedFilter === 'all'
                 ? allTabItems
                 : allTabItems.filter(f => f.lang === selectedFilter);
 
             if (q) {
-                // If user types a festival/language in search, search across ALL tabs so every festival is reachable
                 const allFestsPool = [
                     ...festivalCalendars.telugu,
                     ...festivalCalendars.indian,
@@ -2920,12 +3337,10 @@
             return `
                 <div class="space-y-2.5">
                     <div class="flex gap-1.5 p-1 bg-black/40 rounded-2xl border border-white/10">${tabButtons}</div>
-                    <!-- Quick Pre-Alert Banner inside Calendar Modal -->
                     <div class="flex items-center justify-between bg-neon-pink/10 border border-neon-pink/30 rounded-xl px-3 py-2">
                         <span class="text-[10px] font-bold text-gray-200"><i class="fa-solid fa-bell text-neon-pink mr-1.5"></i>Notify ${festivalAlertConfig.leadDays}d before (${festivalAlertConfig.actionMode === 'notify_and_plan' ? 'Auto-Plan' : 'Notify'})</span>
                         <button type="button" onclick="openFestivalAlertSettings()" class="text-[10px] font-bold text-neon-cyan underline">Settings</button>
                     </div>
-                    <!-- All Languages & Calendar Selector right beside/below Local (తెలుగు) / Indian / World -->
                     <div class="flex items-center gap-2 bg-white/5 border border-neon-amber/35 rounded-xl px-2.5 py-2">
                         <i class="fa-solid fa-language text-neon-amber text-xs shrink-0"></i>
                         <select id="festivalLangSelect" onchange="switchFestivalSubFilter(this.value)" class="flex-1 bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer">
@@ -2933,7 +3348,6 @@
                         </select>
                         <span class="font-mono text-[9px] text-neon-cyan bg-neon-cyan/15 px-2 py-0.5 rounded-full shrink-0">${currentDisplayedFestivals.length} fests</span>
                     </div>
-                    <!-- Live Search or Any Custom Festival in Any Language -->
                     <div class="flex gap-1.5">
                         <input id="customFestivalInput" type="text" value="${escapeHtml(festivalSearchQuery)}" oninput="filterFestivalList(this.value)" placeholder="Search or type any festival/language..." class="flex-1 bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neon-amber">
                         <button type="button" onclick="planCustomFestivalTrip()" class="tactile-btn bg-neon-amber text-cosmic-900 font-bold px-3 py-2 rounded-xl text-xs shrink-0">Plan</button>
@@ -3168,19 +3582,20 @@
         }
         function runMemorySearch() {
             const q = (document.getElementById('memSearchInput')?.value || '').toLowerCase();
-            const matches = memoryGalleryItems.filter(m => m.title.toLowerCase().includes(q) || m.vibe.toLowerCase().includes(q));
+            const matches = memoryGalleryItems.filter(m => m.title.toLowerCase().includes(q) || m.vibe.toLowerCase().includes(q) || String(m.location || '').toLowerCase().includes(q));
             const box = document.getElementById('memSearchResults');
             if (!box) return;
             box.innerHTML = matches.length ? matches.map(m => `
                 <div class="flex items-center gap-3 p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer" onclick="closeModal();openImmersive('${m.url}','${escapeHtml(m.title).replace(/'/g, "\\'")}')">
                     <img src="${m.url}" class="w-10 h-10 rounded-lg object-cover">
-                    <div><p class="text-xs font-bold text-white">${escapeHtml(m.title)}</p><p class="text-[10px] text-neon-cyan">${escapeHtml(m.vibe)}</p></div>
+                    <div><p class="text-xs font-bold text-white">${escapeHtml(m.title)}</p><p class="text-[10px] text-neon-cyan">${escapeHtml(m.location || m.vibe)}</p></div>
                 </div>
             `).join('') : `<p class="text-xs text-gray-400 text-center py-3">No matching memories found.</p>`;
         }
 
-        function addPhotoToVaultGallery(title, vibe, url) {
-            memoryGalleryItems.unshift({ title, vibe, url });
+        function addPhotoToVaultGallery(title, vibe, url, location = 'Kerala, India', date = '') {
+            const tripLocation = String(location || document.getElementById('destInput')?.value || 'Kerala, India').trim();
+            memoryGalleryItems.unshift({ title, vibe, url, location: tripLocation, date });
             document.getElementById('galleryCount').innerText = `${memoryGalleryItems.length} items`;
             const subgrid = document.getElementById('gallery-subgrid');
             if (subgrid) {
@@ -3219,7 +3634,6 @@
             showModal('Folder Options', 'Export this folder as a scrapbook, run AI Storyteller, or rename it.', 'Rename Folder', () => openCreateCustomFolder(), 'Close');
         }
 
-        /* Phase 7: AI Storyteller (Real Gemini + Podcast Audio Readout) */
         async function triggerStoryteller() {
             const folder = document.getElementById('activeFolderTitle').innerText;
             const vibe = document.getElementById('activeFolderVibe').innerText;
@@ -3247,7 +3661,6 @@
             }, 'Cancel');
         }
 
-        /* Phase 8: Smart Clean-up */
         function triggerCleanup() {
             showModal('Scanning Folder...', `<div class="flex justify-center my-4"><span class="loader-dark" style="border-top-color:#FE53BB"></span></div><p class="text-center text-xs text-gray-300">Detecting blurry & duplicate shots...</p>`, 'Cancel');
             setTimeout(() => {
@@ -3271,7 +3684,6 @@
             showModal('[Custom Control] AI Trash Bin', html, 'Empty Trash', () => showToast('Cleaned 14.2 MB storage!', 'fa-broom text-neon-pink'), 'Close');
         }
 
-        /* Physical Scrapbook PDF Print Export */
         function exportScrapbook() {
             const folder = document.getElementById('activeFolderTitle').innerText;
             const previewHTML = `
@@ -3294,7 +3706,6 @@
             }, 'Close');
         }
 
-        /* Add Memory -> ImgBB + SheetDB */
         function updateMemoryFileName(input) {
             const el = document.getElementById('fileNameDisplay');
             el.innerHTML = (input.files && input.files[0])
@@ -3306,6 +3717,7 @@
             const btn = document.getElementById('submitMemoryBtn');
             const status = document.getElementById('statusMessage');
             const title = document.getElementById('memoryTitle').value.trim();
+            const location = document.getElementById('memoryLocation')?.value.trim() || 'Kerala, India';
             const date = document.getElementById('memoryDate').value;
             const vibe = document.getElementById('memoryVibe').value;
             const fileInput = document.getElementById('memoryPhoto');
@@ -3331,18 +3743,18 @@
                 const sheetRes = await fetch(MEMORY_SHEETDB_URL, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: [{ Title: title, Date: date, Vibe: vibe, PhotoURL: photoUrl }] })
+                    body: JSON.stringify({ data: [{ Title: title, Location: location, Date: date, Vibe: vibe, PhotoURL: photoUrl }] })
                 });
                 if (!sheetRes.ok) throw new Error("SheetDB save failed");
 
-                addPhotoToVaultGallery(title, vibe, photoUrl);
+                addPhotoToVaultGallery(title, vibe, photoUrl, location, date);
                 document.getElementById('addMemoryForm').reset();
                 updateMemoryFileName({ files: [] });
                 status.classList.add('hidden');
 
                 showModal(
                     "Memory Saved! ✨",
-                    "Uploaded to ImgBB & saved to your Excel sheet. Want to edit it in AI Studio now?",
+                    `Uploaded to ImgBB & pinned to <b>${escapeHtml(location)}</b> on the Globe. Want to edit it in AI Studio now?`,
                     "Edit in AI Studio",
                     () => {
                         document.getElementById('studioPreviewImg').src = photoUrl;
@@ -3361,7 +3773,6 @@
             }
         }
 
-        /* AI Creative Studio Controls */
         function switchStudioMode(mode) {
             ['magic', 'reel', 'manual'].forEach(m => {
                 document.getElementById(`studio-panel-${m}`).classList.toggle('hidden', m !== mode);
@@ -3431,7 +3842,6 @@
             } catch (err) { showApiErrorModal(err.message); }
         }
 
-        /* Immersive AR Screen + Live Soundscape Synth + Stars */
         function openImmersive(imgSrc, caption = 'Spatial Memory') {
             document.getElementById('immersive-img').src = imgSrc;
             document.getElementById('immersiveCaption').innerText = caption;
